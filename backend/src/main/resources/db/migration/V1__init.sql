@@ -71,7 +71,7 @@ CREATE TABLE IF NOT EXISTS public.products (
                        CHECK (stock_status IN ('IN_STOCK', 'LIMITED', 'OUT_OF_STOCK')),
     stock_count     INTEGER NOT NULL DEFAULT 0,
     is_new          BOOLEAN NOT NULL DEFAULT FALSE,
-    dietary_tags    TEXT[] NOT NULL DEFAULT '{}',
+    dietary_tags    TEXT NOT NULL DEFAULT '',
     image_url       TEXT,
     category_slug   TEXT NOT NULL REFERENCES public.categories(slug),
     created_at      TIMESTAMPTZ NOT NULL DEFAULT NOW(),
