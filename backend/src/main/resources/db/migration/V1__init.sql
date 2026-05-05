@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS public.activities (
     type        TEXT NOT NULL,
     user_id     UUID,
     anon_id     TEXT,
-    meta        JSONB NOT NULL DEFAULT '{}'::jsonb,
+    meta        TEXT NOT NULL DEFAULT '{}',
     created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS activities_user_idx ON public.activities (user_id);
