@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { CreditCard, Lock, MessageCircle } from "lucide-react";
+import { CreditCard, Lock, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,7 +41,7 @@ export default function CheckoutPage() {
   }, []);
   React.useEffect(() => {
     if (user) {
-      setName((n) => n || `${user.nicknameEn} / ${user.nicknameZh}`);
+      setName((n) => n || user.name);
     }
   }, [user]);
 
@@ -62,27 +62,25 @@ export default function CheckoutPage() {
     river: { en: t("checkout.communityRiver"), zh: "河滨苑" },
   } as const;
 
-  const goConsent = () => {
-    router.push(
-      `/auth/wechat/consent?returnTo=${encodeURIComponent("/checkout")}`,
-    );
+  const goLogin = () => {
+    router.push(`/account/login?next=${encodeURIComponent("/checkout")}`);
   };
 
   const onPlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
-      goConsent();
+      goLogin();
       return;
     }
     if (detailed.length === 0) return;
     setSubmitting(true);
     const order = placeOrder({
-      userOpenid: user.openid,
+      userOpenid: user.id,
       items: detailed.map((d) => ({ productId: d.productId, quantity: d.quantity })),
       pickupCommunityEn: communityMap[community].en,
       pickupCommunityZh: communityMap[community].zh,
     });
-    logActivity("PLACE_ORDER", user.openid, {
+    logActivity("PLACE_ORDER", user.id, {
       orderId: order.id,
       total: order.total,
       items: order.items.length,
@@ -123,13 +121,12 @@ export default function CheckoutPage() {
               </span>
               <Button
                 type="button"
-                variant="wechat"
                 size="sm"
-                onClick={goConsent}
+                onClick={goLogin}
                 className="ml-auto"
               >
-                <MessageCircle className="h-4 w-4" />
-                {t("checkout.signInWithWechat")}
+                <LogIn className="h-4 w-4" />
+                {t("nav.signIn")}
               </Button>
             </div>
           )}

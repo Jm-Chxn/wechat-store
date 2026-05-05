@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { listOrders } from "@/lib/repository";
-import { formatDate, formatPrice, maskOpenid } from "@/lib/utils";
+import { formatDate, formatPrice } from "@/lib/utils";
 import type { Order } from "@/types";
 
 export default function AccountPage() {
@@ -24,7 +24,7 @@ export default function AccountPage() {
       router.replace("/account/login");
       return;
     }
-    setOrders(listOrders(user.openid));
+    setOrders(listOrders(user.id));
   }, [isReady, user, router]);
 
   if (!isReady || !user) {
@@ -41,29 +41,27 @@ export default function AccountPage() {
       <div className="grid gap-6 lg:grid-cols-[320px,1fr]">
         <aside className="space-y-4 rounded-2xl border border-border bg-surface p-5">
           <div className="flex items-center gap-3">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={user.avatarUrl}
-              alt={user.nicknameEn}
-              className="h-14 w-14 rounded-full bg-secondary object-cover"
-            />
+            {user.avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={user.avatarUrl}
+                alt={user.name}
+                className="h-14 w-14 rounded-full bg-secondary object-cover"
+              />
+            ) : (
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-secondary text-xl font-semibold">
+                {user.name.charAt(0).toUpperCase()}
+              </div>
+            )}
             <div>
-              <div className="font-semibold leading-tight">
-                {locale === "zh" ? user.nicknameZh : user.nicknameEn}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                {locale === "zh" ? user.nicknameEn : user.nicknameZh}
-              </div>
+              <div className="font-semibold leading-tight">{user.name}</div>
+              <div className="text-xs text-muted-foreground">{user.email}</div>
             </div>
           </div>
           <div className="space-y-1.5 text-xs text-muted-foreground">
             <div className="flex justify-between">
               <span>{t("account.openid")}</span>
-              <span className="font-mono">{maskOpenid(user.openid)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span>{t("account.joined")}</span>
-              <span>{formatDate(user.joinedAt, locale)}</span>
+              <span className="font-mono">{user.id.slice(0, 8)}…</span>
             </div>
             <div className="flex items-center justify-between">
               <span>{t("account.role")}</span>
@@ -95,8 +93,7 @@ export default function AccountPage() {
               variant="ghost"
               className="justify-start text-destructive hover:bg-destructive/10"
               onClick={() => {
-                signOut();
-                router.push("/");
+                void signOut().then(() => router.push("/"));
               }}
             >
               <LogOut className="h-4 w-4" />
@@ -107,9 +104,7 @@ export default function AccountPage() {
 
         <section className="space-y-4 rounded-2xl border border-border bg-surface p-5">
           <h2 className="text-lg font-semibold">
-            {t("account.welcome", {
-              name: locale === "zh" ? user.nicknameZh : user.nicknameEn,
-            })}
+            {t("account.welcome", { name: user.name })}
           </h2>
           <p className="text-sm text-muted-foreground">{t("brand.tagline")}</p>
           {orders.length === 0 ? (

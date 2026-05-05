@@ -48,7 +48,7 @@ export default function AdminOrdersPage() {
     const next = updateOrderStatus(orderId, status);
     if (next) {
       setOrders((cur) => cur.map((o) => (o.id === orderId ? next : o)));
-      logActivity("ADMIN_ORDER_STATUS", user?.openid ?? null, {
+      logActivity("ADMIN_ORDER_STATUS", user?.id ?? null, {
         orderId,
         status,
       });

@@ -2,70 +2,138 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { wechatAccounts } from "@/data/wechatAccounts";
-import { logActivity } from "@/lib/repository";
-import { readJSON, StorageKeys, writeJSON } from "@/lib/storage";
-import type { Role, WeChatAccount } from "@/types";
+import type { Session, User } from "@supabase/supabase-js";
+import { createClient } from "@/utils/supabase/client";
+import type { Role } from "@/types";
+
+/**
+ * Auth provider backed by Supabase. Subscribes to `onAuthStateChange` so React
+ * always reflects the latest session, and joins to `profiles.role` for admin
+ * gating.
+ */
+export interface AuthUser {
+  id: string;
+  email: string | null;
+  name: string;
+  avatarUrl: string | null;
+  role: Role;
+}
 
 interface AuthContextValue {
-  user: WeChatAccount | null;
+  user: AuthUser | null;
+  session: Session | null;
   isReady: boolean;
   role: Role | null;
   isAdmin: boolean;
-  signIn: (openid: string) => WeChatAccount | null;
-  signOut: () => void;
+  signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  signInWithGoogle: (returnTo?: string) => Promise<{ error: string | null }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
+const supabase = createClient();
+
+function deriveName(rawUser: User, profileNickname: string | null): string {
+  if (profileNickname) return profileNickname;
+  const meta = rawUser.user_metadata as Record<string, unknown> | undefined;
+  if (meta && typeof meta.name === "string" && meta.name.length > 0) {
+    return meta.name;
+  }
+  if (rawUser.email) return rawUser.email.split("@")[0];
+  return "Member";
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = React.useState<WeChatAccount | null>(null);
+  const [session, setSession] = React.useState<Session | null>(null);
+  const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isReady, setReady] = React.useState(false);
 
-  React.useEffect(() => {
-    const stored = readJSON<WeChatAccount | null>(StorageKeys.user, null);
-    if (stored?.openid) {
-      // re-resolve so role updates from data file always win
-      const fresh = wechatAccounts.find((a) => a.openid === stored.openid);
-      setUser(fresh ?? stored);
+  const refreshProfile = React.useCallback(async (sess: Session | null) => {
+    if (!sess?.user) {
+      setUser(null);
+      return;
     }
-    setReady(true);
-  }, []);
-
-  const signIn = React.useCallback((openid: string) => {
-    const acc = wechatAccounts.find((a) => a.openid === openid);
-    if (!acc) return null;
-    setUser(acc);
-    writeJSON(StorageKeys.user, acc);
-    logActivity("SIGN_IN", acc.openid, {
-      nicknameEn: acc.nicknameEn,
-      nicknameZh: acc.nicknameZh,
-      role: acc.role,
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("nickname, avatar_url, role")
+      .eq("user_id", sess.user.id)
+      .single();
+    let role: Role = "user";
+    let nickname: string | null = null;
+    let avatarUrl: string | null = null;
+    if (!error && data) {
+      role = (data.role === "admin" ? "admin" : "user") as Role;
+      nickname = (data.nickname as string | null) ?? null;
+      avatarUrl = (data.avatar_url as string | null) ?? null;
+    }
+    setUser({
+      id: sess.user.id,
+      email: sess.user.email ?? null,
+      name: deriveName(sess.user, nickname),
+      avatarUrl,
+      role,
     });
-    return acc;
   }, []);
 
-  const signOut = React.useCallback(() => {
-    if (user?.openid) {
-      logActivity("SIGN_OUT", user.openid, {
-        nicknameEn: user.nicknameEn,
-        nicknameZh: user.nicknameZh,
+  React.useEffect(() => {
+    let isMounted = true;
+    void supabase.auth.getSession().then(({ data }) => {
+      if (!isMounted) return;
+      setSession(data.session);
+      void refreshProfile(data.session).finally(() => {
+        if (isMounted) setReady(true);
       });
-    }
-    setUser(null);
-    writeJSON(StorageKeys.user, null);
-  }, [user]);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+      setSession(sess);
+      await refreshProfile(sess);
+    });
+    return () => {
+      isMounted = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [refreshProfile]);
+
+  const signInWithPassword = React.useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const signUpWithPassword = React.useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const signInWithGoogle = React.useCallback(async (returnTo?: string) => {
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+    const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${origin}/auth/callback${target}` },
+    });
+    return { error: error?.message ?? null };
+  }, []);
+
+  const signOut = React.useCallback(async () => {
+    await supabase.auth.signOut();
+  }, []);
 
   const value = React.useMemo<AuthContextValue>(
     () => ({
       user,
+      session,
       isReady,
       role: user?.role ?? null,
       isAdmin: user?.role === "admin",
-      signIn,
+      signInWithPassword,
+      signUpWithPassword,
+      signInWithGoogle,
       signOut,
     }),
-    [user, isReady, signIn, signOut],
+    [user, session, isReady, signInWithPassword, signUpWithPassword, signInWithGoogle, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -77,20 +145,14 @@ export function useAuth() {
   return ctx;
 }
 
-/**
- * Redirect helper for any flow that requires sign-in (Place Order, Buy Now).
- * Returns true if the caller should bail out.
- */
 export function useRequireAuth() {
   const router = useRouter();
   const { user, isReady } = useAuth();
-
   return React.useCallback(
     (returnTo: string) => {
-      if (!isReady) return true; // still loading
+      if (!isReady) return true;
       if (!user) {
-        const url = `/auth/wechat/consent?returnTo=${encodeURIComponent(returnTo)}`;
-        router.push(url);
+        router.push(`/account/login?next=${encodeURIComponent(returnTo)}`);
         return true;
       }
       return false;
@@ -99,23 +161,16 @@ export function useRequireAuth() {
   );
 }
 
-/** Admin-only route gate. Renders nothing while redirecting. */
 export function useAdminGuard() {
   const router = useRouter();
   const { user, isReady, isAdmin } = useAuth();
-
   React.useEffect(() => {
     if (!isReady) return;
     if (!user) {
-      router.replace(
-        `/auth/wechat/consent?returnTo=${encodeURIComponent("/admin")}`,
-      );
+      router.replace(`/account/login?next=${encodeURIComponent("/admin")}`);
       return;
     }
-    if (!isAdmin) {
-      router.replace("/");
-    }
+    if (!isAdmin) router.replace("/");
   }, [user, isReady, isAdmin, router]);
-
   return { ready: isReady, user, isAdmin };
 }

@@ -185,9 +185,9 @@ export default function AdminUsersPage() {
                             {formatDate(a.createdAt, locale)} ·{" "}
                           </span>
                           <span>{t(`activity.${a.type}` as DictionaryKey)}</span>
-                          {a.meta?.productId && (
+                          {a.meta?.productId ? (
                             <span className="text-muted-foreground"> · {String(a.meta.productId)}</span>
-                          )}
+                          ) : null}
                         </li>
                       ))}
                     </ul>

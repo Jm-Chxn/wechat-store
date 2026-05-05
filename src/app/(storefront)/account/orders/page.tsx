@@ -22,11 +22,11 @@ export default function MyOrdersPage() {
     if (!isReady) return;
     if (!user) {
       router.replace(
-        `/auth/wechat/consent?returnTo=${encodeURIComponent("/account/orders")}`,
+        `/account/login?next=${encodeURIComponent("/account/orders")}`,
       );
       return;
     }
-    setOrders(listOrders(user.openid));
+    setOrders(listOrders(user.id));
   }, [isReady, user, router]);
 
   if (!isReady || !user) {

@@ -100,15 +100,19 @@ export function Navbar() {
               href="/account"
               className="hidden items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm hover:bg-secondary sm:inline-flex"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={user.avatarUrl}
-                alt={user.nicknameEn}
-                className="h-7 w-7 rounded-full bg-secondary object-cover"
-              />
-              <span>
-                {user.nicknameEn} / {user.nicknameZh}
-              </span>
+              {user.avatarUrl ? (
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img
+                  src={user.avatarUrl}
+                  alt={user.name}
+                  className="h-7 w-7 rounded-full bg-secondary object-cover"
+                />
+              ) : (
+                <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
+                  {user.name.charAt(0).toUpperCase()}
+                </span>
+              )}
+              <span>{user.name}</span>
             </Link>
           ) : (
             <Button asChild size="sm" className="hidden sm:inline-flex">
@@ -157,13 +161,19 @@ export function Navbar() {
                   href="/account"
                   className="ml-auto inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={user.avatarUrl}
-                    alt={user.nicknameEn}
-                    className="h-7 w-7 rounded-full bg-secondary object-cover"
-                  />
-                  <span>{user.nicknameEn}</span>
+                  {user.avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={user.avatarUrl}
+                      alt={user.name}
+                      className="h-7 w-7 rounded-full bg-secondary object-cover"
+                    />
+                  ) : (
+                    <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
+                      {user.name.charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                  <span>{user.name}</span>
                 </Link>
               ) : (
                 <Button asChild size="sm" className="ml-auto">

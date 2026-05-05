@@ -43,7 +43,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
           )
         : [...lines, { productId, quantity: qty }];
       persist(next);
-      logActivity("ADD_TO_CART", user?.openid ?? null, { productId, qty });
+      logActivity("ADD_TO_CART", user?.id ?? null, { productId, qty });
     },
     [lines, persist, user],
   );

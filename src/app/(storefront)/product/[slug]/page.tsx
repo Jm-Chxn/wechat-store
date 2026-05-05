@@ -71,7 +71,7 @@ export default function ProductDetailPage() {
   const onBuy = () => {
     if (oos) return;
     add(product.id, qty);
-    logActivity("CLICK_BUY", user?.openid ?? null, { productId: product.id });
+    logActivity("CLICK_BUY", user?.id ?? null, { productId: product.id });
     router.push("/checkout");
   };
 

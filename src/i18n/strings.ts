@@ -130,10 +130,10 @@ export const dictionary = {
   "checkout.placeOrder": { en: "Place Order", zh: "提交订单" },
   "checkout.orderSummary": { en: "Order summary", zh: "订单摘要" },
   "checkout.signInRequired": {
-    en: "Sign in with WeChat to place your order.",
-    zh: "请使用微信登录后提交订单。",
+    en: "Sign in to place your order.",
+    zh: "请登录后提交订单。",
   },
-  "checkout.signInWithWechat": { en: "Sign in with WeChat", zh: "微信登录" },
+  "checkout.signInWithWechat": { en: "Sign in", zh: "登录" },
   "checkout.cardHint": {
     en: "Demo only — no real card is charged.",
     zh: "仅做演示，不会实际扣款。",
@@ -163,7 +163,7 @@ export const dictionary = {
   "account.myOrders": { en: "My Orders", zh: "我的订单" },
   "account.savedItems": { en: "Saved Items", zh: "收藏的商品" },
   "account.signOut": { en: "Sign Out", zh: "退出登录" },
-  "account.openid": { en: "WeChat openid", zh: "微信 openid" },
+  "account.openid": { en: "User ID", zh: "用户编号" },
   "account.joined": { en: "Joined", zh: "加入时间" },
   "account.role": { en: "Role", zh: "身份" },
   "account.role.user": { en: "Member", zh: "会员" },
@@ -183,7 +183,11 @@ export const dictionary = {
   "login.continueAsGuest": { en: "Continue as Guest", zh: "以访客身份继续" },
   "login.createAccount": { en: "Create Account", zh: "创建账户" },
   "login.or": { en: "or", zh: "或" },
-  "login.dividerHint": { en: "Email login is for demo only — use WeChat to actually sign in.", zh: "邮箱登录仅作演示——请使用微信登录。" },
+  "login.dividerHint": { en: "Sign in with your email or continue with Google.", zh: "用邮箱登录，或通过 Google 继续。" },
+  "login.passwordTooShort": { en: "Password must be at least 6 characters", zh: "密码至少需要 6 位" },
+  "login.signInError": { en: "Sign-in failed. Please check your credentials.", zh: "登录失败，请检查邮箱和密码。" },
+  "login.signUpError": { en: "Could not create account. Please try again.", zh: "账户创建失败，请重试。" },
+  "login.checkEmail": { en: "Check your inbox to confirm your email.", zh: "请到邮箱查收确认邮件。" },
 
   // wechat consent
   "wechat.consentTitle": { en: "WeChat Authorization", zh: "微信授权登录" },

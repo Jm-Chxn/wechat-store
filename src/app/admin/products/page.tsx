@@ -54,7 +54,7 @@ export default function AdminProductsPage() {
     setProducts(next);
     logActivity(
       isCreate ? "ADMIN_PRODUCT_CREATE" : "ADMIN_PRODUCT_UPDATE",
-      user?.openid ?? null,
+      user?.id ?? null,
       { productId: p.id, nameEn: p.nameEn },
     );
     toast({
@@ -66,7 +66,7 @@ export default function AdminProductsPage() {
   const onDelete = (p: Product) => {
     const next = deleteProduct(p.id);
     setProducts(next);
-    logActivity("ADMIN_PRODUCT_DELETE", user?.openid ?? null, {
+    logActivity("ADMIN_PRODUCT_DELETE", user?.id ?? null, {
       productId: p.id,
       nameEn: p.nameEn,
     });
