@@ -26,7 +26,9 @@ export default function MyOrdersPage() {
       );
       return;
     }
-    setOrders(listOrders(user.id));
+    let cancelled = false;
+    void listOrders(user.id).then((o) => { if (!cancelled) setOrders(o); });
+    return () => { cancelled = true; };
   }, [isReady, user, router]);
 
   if (!isReady || !user) {

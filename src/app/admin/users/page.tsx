@@ -30,20 +30,23 @@ import type { DictionaryKey } from "@/i18n/strings";
 export default function AdminUsersPage() {
   const { t, locale } = useLanguage();
   const [summaries, setSummaries] = React.useState<
-    ReturnType<typeof listUserSummaries>
+    Awaited<ReturnType<typeof listUserSummaries>>
   >([]);
   const [drawerUser, setDrawerUser] = React.useState<WeChatAccount | null>(null);
   const [drawerOrders, setDrawerOrders] = React.useState<Order[]>([]);
   const [drawerActs, setDrawerActs] = React.useState<Activity[]>([]);
 
   React.useEffect(() => {
-    setSummaries(listUserSummaries());
+    let cancelled = false;
+    void listUserSummaries().then((s) => { if (!cancelled) setSummaries(s); });
+    return () => { cancelled = true; };
   }, []);
 
-  const open = (acc: WeChatAccount) => {
+  const open = async (acc: WeChatAccount) => {
     setDrawerUser(acc);
-    setDrawerOrders(listOrders(acc.openid));
-    setDrawerActs(listActivities(acc.openid));
+    const [o, a] = await Promise.all([listOrders(acc.openid), listActivities(acc.openid)]);
+    setDrawerOrders(o);
+    setDrawerActs(a);
   };
 
   return (

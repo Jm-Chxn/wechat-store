@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { useAuth } from "@/providers/AuthProvider";
-import { logActivity } from "@/lib/repository";
+import { logActivity, mergeGuestCart, fetchServerCart } from "@/lib/repository";
+import { api } from "@/lib/api/client";
 import { readJSON, StorageKeys, writeJSON } from "@/lib/storage";
 import type { CartLine } from "@/types";
 
@@ -18,18 +19,55 @@ interface CartContextValue {
 
 const CartContext = React.createContext<CartContextValue | undefined>(undefined);
 
-export function CartProvider({ children }: { children: React.ReactNode }) {
-  const { user } = useAuth();
-  const [lines, setLines] = React.useState<CartLine[]>([]);
-  const [isReady, setReady] = React.useState(false);
+interface ServerCartItem {
+  id: string;
+  productId: string;
+  quantity: number;
+}
 
+export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user, isReady: authReady } = useAuth();
+  const [lines, setLines] = React.useState<CartLine[]>([]);
+  const [serverIds, setServerIds] = React.useState<Map<string, string>>(new Map());
+  const [isReady, setReady] = React.useState(false);
+  const [synced, setSynced] = React.useState<string | null>(null);
+
+  // Hydrate from localStorage initially.
   React.useEffect(() => {
     const stored = readJSON<CartLine[]>(StorageKeys.cart, []);
     setLines(stored);
     setReady(true);
   }, []);
 
-  const persist = React.useCallback((next: CartLine[]) => {
+  // On sign-in: merge guest cart (if any) into the server cart, then load.
+  React.useEffect(() => {
+    if (!authReady) return;
+    if (!user) {
+      setSynced(null);
+      setServerIds(new Map());
+      return;
+    }
+    if (synced === user.id) return;
+    let cancelled = false;
+    void (async () => {
+      const guest = readJSON<CartLine[]>(StorageKeys.cart, []);
+      const merged =
+        guest.length > 0
+          ? await mergeGuestCart(guest.map((l) => ({ productId: l.productId, quantity: l.quantity })))
+          : await fetchServerCart();
+      if (cancelled || !merged) return;
+      const items = (merged.items ?? []) as ServerCartItem[];
+      setLines(items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
+      const ids = new Map<string, string>();
+      items.forEach((i) => ids.set(i.productId, i.id));
+      setServerIds(ids);
+      writeJSON(StorageKeys.cart, items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
+      setSynced(user.id);
+    })();
+    return () => { cancelled = true; };
+  }, [authReady, user, synced]);
+
+  const persistLocal = React.useCallback((next: CartLine[]) => {
     setLines(next);
     writeJSON(StorageKeys.cart, next);
   }, []);
@@ -42,35 +80,51 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             l.productId === productId ? { ...l, quantity: l.quantity + qty } : l,
           )
         : [...lines, { productId, quantity: qty }];
-      persist(next);
+      persistLocal(next);
       logActivity("ADD_TO_CART", user?.id ?? null, { productId, qty });
+      if (user) {
+        void api
+          .post<{ items: ServerCartItem[] }>("/api/v1/cart/items", { productId, quantity: qty })
+          .then((cart) => {
+            const ids = new Map<string, string>();
+            (cart.items ?? []).forEach((i) => ids.set(i.productId, i.id));
+            setServerIds(ids);
+          })
+          .catch(() => {});
+      }
     },
-    [lines, persist, user],
+    [lines, persistLocal, user],
   );
 
   const remove = React.useCallback(
     (productId: string) => {
-      persist(lines.filter((l) => l.productId !== productId));
+      persistLocal(lines.filter((l) => l.productId !== productId));
+      const id = serverIds.get(productId);
+      if (user && id) {
+        void api.delete(`/api/v1/cart/items/${encodeURIComponent(id)}`).catch(() => {});
+      }
     },
-    [lines, persist],
+    [lines, persistLocal, serverIds, user],
   );
 
   const setQuantity = React.useCallback(
     (productId: string, qty: number) => {
       if (qty <= 0) {
-        persist(lines.filter((l) => l.productId !== productId));
+        remove(productId);
         return;
       }
-      persist(
-        lines.map((l) =>
-          l.productId === productId ? { ...l, quantity: qty } : l,
-        ),
+      persistLocal(
+        lines.map((l) => (l.productId === productId ? { ...l, quantity: qty } : l)),
       );
+      const id = serverIds.get(productId);
+      if (user && id) {
+        void api.patch(`/api/v1/cart/items/${encodeURIComponent(id)}`, { quantity: qty }).catch(() => {});
+      }
     },
-    [lines, persist],
+    [lines, persistLocal, serverIds, user, remove],
   );
 
-  const clear = React.useCallback(() => persist([]), [persist]);
+  const clear = React.useCallback(() => persistLocal([]), [persistLocal]);
 
   const count = React.useMemo(
     () => lines.reduce((s, l) => s + l.quantity, 0),

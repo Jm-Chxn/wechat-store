@@ -27,7 +27,9 @@ export default function CategoryPage() {
   const [sort, setSort] = React.useState<SortKey>("newest");
 
   React.useEffect(() => {
-    setProducts(listProducts());
+    let cancelled = false;
+    void listProducts().then((p) => { if (!cancelled) setProducts(p); });
+    return () => { cancelled = true; };
   }, []);
 
   React.useEffect(() => {

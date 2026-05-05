@@ -37,7 +37,9 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = React.useState(false);
 
   React.useEffect(() => {
-    setProducts(listProducts());
+    let cancelled = false;
+    void listProducts().then((p) => { if (!cancelled) setProducts(p); });
+    return () => { cancelled = true; };
   }, []);
   React.useEffect(() => {
     if (user) {
@@ -66,7 +68,7 @@ export default function CheckoutPage() {
     router.push(`/account/login?next=${encodeURIComponent("/checkout")}`);
   };
 
-  const onPlaceOrder = (e: React.FormEvent) => {
+  const onPlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
       goLogin();
@@ -74,19 +76,23 @@ export default function CheckoutPage() {
     }
     if (detailed.length === 0) return;
     setSubmitting(true);
-    const order = placeOrder({
-      userOpenid: user.id,
-      items: detailed.map((d) => ({ productId: d.productId, quantity: d.quantity })),
-      pickupCommunityEn: communityMap[community].en,
-      pickupCommunityZh: communityMap[community].zh,
-    });
-    logActivity("PLACE_ORDER", user.id, {
-      orderId: order.id,
-      total: order.total,
-      items: order.items.length,
-    });
-    clear();
-    router.replace(`/order/confirmed/${order.id}`);
+    try {
+      const order = await placeOrder({
+        userOpenid: user.id,
+        items: detailed.map((d) => ({ productId: d.productId, quantity: d.quantity })),
+        pickupCommunityEn: communityMap[community].en,
+        pickupCommunityZh: communityMap[community].zh,
+      });
+      logActivity("PLACE_ORDER", user.id, {
+        orderId: order.id,
+        total: order.total,
+        items: order.items.length,
+      });
+      clear();
+      router.replace(`/order/confirmed/${order.id}`);
+    } catch {
+      setSubmitting(false);
+    }
   };
 
   if (!isReady) {

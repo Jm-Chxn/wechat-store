@@ -17,7 +17,9 @@ export default function OrderConfirmedPage() {
   const [order, setOrder] = React.useState<Order | null | undefined>(undefined);
 
   React.useEffect(() => {
-    setOrder(getOrder(params.id) ?? null);
+    let cancelled = false;
+    void getOrder(params.id).then((o) => { if (!cancelled) setOrder(o ?? null); });
+    return () => { cancelled = true; };
   }, [params.id]);
 
   if (order === undefined) {

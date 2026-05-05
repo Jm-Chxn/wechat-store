@@ -14,7 +14,9 @@ export default function HomePage() {
   const [products, setProducts] = React.useState<Product[]>([]);
 
   React.useEffect(() => {
-    setProducts(listProducts());
+    let cancelled = false;
+    void listProducts().then((p) => { if (!cancelled) setProducts(p); });
+    return () => { cancelled = true; };
   }, []);
 
   // "Popular This Week" — pick a deterministic sample so it doesn't reshuffle.

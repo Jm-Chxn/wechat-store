@@ -56,7 +56,7 @@ export function ProductFormDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initial?: Product;
-  onSave: (p: Product) => void;
+  onSave: (p: Product) => void | Promise<void>;
 }) {
   const { t } = useLanguage();
   const [draft, setDraft] = React.useState<Product>(blankProduct());

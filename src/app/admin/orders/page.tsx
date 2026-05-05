@@ -27,7 +27,7 @@ import {
   updateOrderStatus,
 } from "@/lib/repository";
 import { formatDate, formatPrice } from "@/lib/utils";
-import type { Order, OrderStatus } from "@/types";
+import type { Order, OrderStatus, WeChatAccount } from "@/types";
 import { useToast } from "@/components/ui/toast";
 
 const statusOptions: OrderStatus[] = ["CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"];
@@ -38,14 +38,20 @@ export default function AdminOrdersPage() {
   const { toast } = useToast();
   const [orders, setOrders] = React.useState<Order[]>([]);
   const [filterStatus, setFilterStatus] = React.useState<"ALL" | OrderStatus>("ALL");
-  const users = listUsers();
+  const [users, setUsers] = React.useState<WeChatAccount[]>([]);
 
   React.useEffect(() => {
-    setOrders(listOrders());
+    let cancelled = false;
+    void Promise.all([listOrders(), listUsers()]).then(([o, u]) => {
+      if (cancelled) return;
+      setOrders(o);
+      setUsers(u);
+    });
+    return () => { cancelled = true; };
   }, []);
 
-  const onChange = (orderId: string, status: OrderStatus) => {
-    const next = updateOrderStatus(orderId, status);
+  const onChange = async (orderId: string, status: OrderStatus) => {
+    const next = await updateOrderStatus(orderId, status);
     if (next) {
       setOrders((cur) => cur.map((o) => (o.id === orderId ? next : o)));
       logActivity("ADMIN_ORDER_STATUS", user?.id ?? null, {

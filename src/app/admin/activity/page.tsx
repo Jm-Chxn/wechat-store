@@ -5,7 +5,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { listActivities, listUsers } from "@/lib/repository";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
-import type { Activity, ActivityType } from "@/types";
+import type { Activity, ActivityType, WeChatAccount } from "@/types";
 import type { DictionaryKey } from "@/i18n/strings";
 
 const filters: { key: ActivityType | "ALL"; labelKey: DictionaryKey }[] = [
@@ -21,10 +21,16 @@ export default function AdminActivityPage() {
   const { t, locale } = useLanguage();
   const [activities, setActivities] = React.useState<Activity[]>([]);
   const [active, setActive] = React.useState<ActivityType | "ALL">("ALL");
-  const users = listUsers();
+  const [users, setUsers] = React.useState<WeChatAccount[]>([]);
 
   React.useEffect(() => {
-    setActivities(listActivities());
+    let cancelled = false;
+    void Promise.all([listActivities(), listUsers()]).then(([a, u]) => {
+      if (cancelled) return;
+      setActivities(a);
+      setUsers(u);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const filtered =

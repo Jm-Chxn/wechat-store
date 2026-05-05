@@ -33,8 +33,13 @@ export default function AdminDashboardPage() {
   const [recent, setRecent] = React.useState<Order[]>([]);
 
   React.useEffect(() => {
-    setStats(computeStats());
-    setRecent(listOrders().slice(0, 5));
+    let cancelled = false;
+    void Promise.all([computeStats(), listOrders()]).then(([s, o]) => {
+      if (cancelled) return;
+      setStats(s);
+      setRecent(o.slice(0, 5));
+    });
+    return () => { cancelled = true; };
   }, []);
 
   if (!stats) {

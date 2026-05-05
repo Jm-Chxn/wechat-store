@@ -45,12 +45,14 @@ export default function AdminProductsPage() {
   const [confirm, setConfirm] = React.useState<Product | null>(null);
 
   React.useEffect(() => {
-    setProducts(listProducts());
+    let cancelled = false;
+    void listProducts().then((p) => { if (!cancelled) setProducts(p); });
+    return () => { cancelled = true; };
   }, []);
 
-  const onSave = (p: Product) => {
+  const onSave = async (p: Product) => {
     const isCreate = !products.find((x) => x.id === p.id);
-    const next = upsertProduct(p);
+    const next = await upsertProduct(p);
     setProducts(next);
     logActivity(
       isCreate ? "ADMIN_PRODUCT_CREATE" : "ADMIN_PRODUCT_UPDATE",
@@ -63,8 +65,8 @@ export default function AdminProductsPage() {
     });
   };
 
-  const onDelete = (p: Product) => {
-    const next = deleteProduct(p.id);
+  const onDelete = async (p: Product) => {
+    const next = await deleteProduct(p.id);
     setProducts(next);
     logActivity("ADMIN_PRODUCT_DELETE", user?.id ?? null, {
       productId: p.id,

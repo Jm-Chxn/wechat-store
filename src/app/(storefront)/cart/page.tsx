@@ -21,7 +21,9 @@ export default function CartPage() {
   const [promo, setPromo] = React.useState("");
 
   React.useEffect(() => {
-    setProducts(listProducts());
+    let cancelled = false;
+    void listProducts().then((p) => { if (!cancelled) setProducts(p); });
+    return () => { cancelled = true; };
   }, []);
 
   const detailed = lines

@@ -19,7 +19,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCart } from "@/providers/CartProvider";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/providers/AuthProvider";
-import { listProducts, getProduct, logActivity } from "@/lib/repository";
+import { listProducts, logActivity } from "@/lib/repository";
 import { formatPrice } from "@/lib/utils";
 import { categoryBySlug } from "@/data/categories";
 import type { Product } from "@/types";
@@ -37,11 +37,13 @@ export default function ProductDetailPage() {
   const [qty, setQty] = React.useState(1);
 
   React.useEffect(() => {
-    setAllProducts(listProducts());
+    let cancelled = false;
+    void listProducts().then((p) => { if (!cancelled) setAllProducts(p); });
+    return () => { cancelled = true; };
   }, []);
 
   const product = React.useMemo(
-    () => allProducts.find((p) => p.slug === params.slug) ?? getProduct(params.slug),
+    () => allProducts.find((p) => p.slug === params.slug),
     [allProducts, params.slug],
   );
 

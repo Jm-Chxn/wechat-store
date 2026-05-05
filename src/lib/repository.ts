@@ -1,81 +1,261 @@
-// Repository — the only module that touches localStorage for domain data.
-// Swap this file when wiring a real backend; the rest of the app should not
-// need to change.
+// Repository — single source of truth for product/order/user/activity reads
+// and writes. Calls the Spring Boot backend at NEXT_PUBLIC_API_BASE_URL with
+// the Supabase access token in the Authorization header. The function
+// signatures intentionally match the legacy localStorage-backed repository
+// so that callers do not need to change their data flows beyond awaiting
+// promises.
 
 import { products as seedProducts } from "@/data/products";
-import { wechatAccounts } from "@/data/wechatAccounts";
-import {
-  readJSON,
-  StorageKeys,
-  writeJSON,
-} from "@/lib/storage";
+import { api } from "@/lib/api/client";
 import type {
   Activity,
   ActivityType,
   Order,
   OrderStatus,
   Product,
+  Role,
   WeChatAccount,
 } from "@/types";
-import { uid } from "@/lib/utils";
 
-// --- Products -------------------------------------------------------------
+// ---- Wire shapes ---------------------------------------------------------
 
-export function listProducts(): Product[] {
-  const stored = readJSON<Product[] | null>(StorageKeys.products, null);
-  if (stored && Array.isArray(stored) && stored.length > 0) return stored;
-  writeJSON(StorageKeys.products, seedProducts);
-  return seedProducts;
+interface BackendProduct {
+  id: string;
+  slug: string;
+  nameEn: string;
+  nameZh: string;
+  descriptionEn: string | null;
+  descriptionZh: string | null;
+  price: number;
+  packSizeEn: string | null;
+  packSizeZh: string | null;
+  stockStatus: "IN_STOCK" | "LIMITED" | "OUT_OF_STOCK";
+  stockCount: number;
+  isNew: boolean;
+  dietaryTags: string[];
+  imageUrl: string | null;
+  categorySlug: Product["categorySlug"];
 }
 
-export function getProduct(slugOrId: string): Product | undefined {
-  return listProducts().find((p) => p.slug === slugOrId || p.id === slugOrId);
+interface BackendOrderItem {
+  productId: string;
+  nameEn: string;
+  nameZh: string;
+  imageUrl: string | null;
+  unitPriceCents: number;
+  quantity: number;
 }
 
-export function upsertProduct(p: Product): Product[] {
-  const list = listProducts();
-  const idx = list.findIndex((x) => x.id === p.id);
-  if (idx === -1) list.unshift(p);
-  else list[idx] = p;
-  writeJSON(StorageKeys.products, list);
-  return list;
+interface BackendOrder {
+  id: string;
+  userId: string | null;
+  guestName: string | null;
+  subtotalCents: number;
+  deliveryFeeCents: number;
+  totalCents: number;
+  status: OrderStatus;
+  pickupCommunityEn: string | null;
+  pickupCommunityZh: string | null;
+  createdAt: string | null;
+  items: BackendOrderItem[];
 }
 
-export function deleteProduct(id: string): Product[] {
-  const list = listProducts().filter((p) => p.id !== id);
-  writeJSON(StorageKeys.products, list);
-  return list;
+interface BackendActivity {
+  id: string;
+  type: string;
+  userId: string | null;
+  anonId: string | null;
+  meta: string | null;
+  createdAt: string | null;
 }
 
-export function resetProducts(): Product[] {
-  writeJSON(StorageKeys.products, seedProducts);
-  return seedProducts;
+interface BackendUserSummary {
+  userId: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  role: Role;
+  createdAt: string | null;
+  lastSeenAt: string | null;
+  orderCount: number;
+  activityCount: number;
+  totalSpentCents: number;
 }
 
-// --- Users ----------------------------------------------------------------
-
-export function listUsers(): WeChatAccount[] {
-  return wechatAccounts;
+interface BackendStats {
+  totalUsers: number;
+  ordersToday: number;
+  revenueTodayCents: number;
+  topCategorySlug: string | null;
+  ordersLast7d: { date: string; orders: number; revenue: number }[];
+  revenueByCategory: { categorySlug: string; revenue: number }[];
 }
 
-export function getUser(openid: string | null | undefined) {
-  if (!openid) return undefined;
-  return wechatAccounts.find((a) => a.openid === openid);
+// ---- Mapping helpers -----------------------------------------------------
+
+function fromBackendProduct(p: BackendProduct): Product {
+  return {
+    id: p.id,
+    slug: p.slug,
+    nameEn: p.nameEn,
+    nameZh: p.nameZh,
+    descriptionEn: p.descriptionEn ?? "",
+    descriptionZh: p.descriptionZh ?? "",
+    price: p.price,
+    packSizeEn: p.packSizeEn ?? "",
+    packSizeZh: p.packSizeZh ?? "",
+    stockStatus: p.stockStatus,
+    stockCount: p.stockCount,
+    isNew: !!p.isNew,
+    dietaryTags: (p.dietaryTags ?? []) as Product["dietaryTags"],
+    imageUrl: p.imageUrl ?? "",
+    categorySlug: p.categorySlug,
+  };
 }
 
-// --- Orders ---------------------------------------------------------------
-
-export function listOrders(userOpenid?: string | null): Order[] {
-  const all = readJSON<Order[]>(StorageKeys.orders, []);
-  const sorted = [...all].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-  if (!userOpenid) return sorted;
-  return sorted.filter((o) => o.userOpenid === userOpenid);
+function fromBackendOrder(o: BackendOrder): Order {
+  return {
+    id: o.id,
+    userOpenid: o.userId,
+    guestName: o.guestName ?? undefined,
+    items: (o.items ?? []).map((it) => ({
+      productId: it.productId,
+      nameEn: it.nameEn,
+      nameZh: it.nameZh,
+      imageUrl: it.imageUrl ?? "",
+      unitPrice: it.unitPriceCents,
+      quantity: it.quantity,
+    })),
+    subtotal: o.subtotalCents,
+    deliveryFee: o.deliveryFeeCents,
+    total: o.totalCents,
+    status: o.status,
+    createdAt: o.createdAt ?? new Date().toISOString(),
+    pickupCommunityEn: o.pickupCommunityEn ?? "",
+    pickupCommunityZh: o.pickupCommunityZh ?? "",
+  };
 }
 
-export function getOrder(id: string): Order | undefined {
-  return listOrders().find((o) => o.id === id);
+function fromBackendActivity(a: BackendActivity): Activity {
+  let meta: Record<string, unknown> | undefined;
+  if (a.meta) {
+    try {
+      meta = JSON.parse(a.meta) as Record<string, unknown>;
+    } catch {
+      meta = undefined;
+    }
+  }
+  return {
+    id: a.id,
+    type: a.type as ActivityType,
+    userOpenid: a.userId,
+    meta,
+    createdAt: a.createdAt ?? new Date().toISOString(),
+  };
+}
+
+function fromBackendUser(u: BackendUserSummary): WeChatAccount {
+  const display = u.nickname || (u.userId ? u.userId.slice(0, 8) : "Member");
+  return {
+    openid: u.userId,
+    nicknameEn: display,
+    nicknameZh: display,
+    avatarUrl: u.avatarUrl ?? "",
+    role: u.role,
+    joinedAt: u.createdAt ?? new Date().toISOString(),
+  };
+}
+
+// ---- Products ------------------------------------------------------------
+
+export async function listProducts(): Promise<Product[]> {
+  try {
+    const data = await api.get<BackendProduct[]>("/api/v1/products");
+    if (Array.isArray(data) && data.length > 0) return data.map(fromBackendProduct);
+    return seedProducts;
+  } catch {
+    return seedProducts;
+  }
+}
+
+export async function getProduct(slugOrId: string): Promise<Product | undefined> {
+  try {
+    const p = await api.get<BackendProduct>(`/api/v1/products/${encodeURIComponent(slugOrId)}`);
+    return fromBackendProduct(p);
+  } catch {
+    return seedProducts.find((p) => p.slug === slugOrId || p.id === slugOrId);
+  }
+}
+
+export async function upsertProduct(p: Product): Promise<Product[]> {
+  const payload = {
+    id: p.id,
+    slug: p.slug,
+    nameEn: p.nameEn,
+    nameZh: p.nameZh,
+    descriptionEn: p.descriptionEn,
+    descriptionZh: p.descriptionZh,
+    price: p.price,
+    packSizeEn: p.packSizeEn,
+    packSizeZh: p.packSizeZh,
+    stockStatus: p.stockStatus,
+    stockCount: p.stockCount,
+    isNew: p.isNew,
+    dietaryTags: p.dietaryTags,
+    imageUrl: p.imageUrl,
+    categorySlug: p.categorySlug,
+  };
+  if (p.id) {
+    await api.patch<BackendProduct>(`/api/v1/admin/products/${encodeURIComponent(p.id)}`, payload);
+  } else {
+    await api.post<BackendProduct>("/api/v1/admin/products", payload);
+  }
+  return listProducts();
+}
+
+export async function deleteProduct(id: string): Promise<Product[]> {
+  await api.delete(`/api/v1/admin/products/${encodeURIComponent(id)}`);
+  return listProducts();
+}
+
+export async function resetProducts(): Promise<Product[]> {
+  return listProducts();
+}
+
+// ---- Users (admin) -------------------------------------------------------
+
+export async function listUsers(): Promise<WeChatAccount[]> {
+  try {
+    const rows = await api.get<BackendUserSummary[]>("/api/v1/admin/users");
+    return rows.map(fromBackendUser);
+  } catch {
+    return [];
+  }
+}
+
+export async function getUser(id: string | null | undefined): Promise<WeChatAccount | undefined> {
+  if (!id) return undefined;
+  const all = await listUsers();
+  return all.find((a) => a.openid === id);
+}
+
+// ---- Orders --------------------------------------------------------------
+
+export async function listOrders(userId?: string | null): Promise<Order[]> {
+  const path = userId ? "/api/v1/orders" : "/api/v1/admin/orders";
+  try {
+    const rows = await api.get<BackendOrder[]>(path);
+    return rows.map(fromBackendOrder);
+  } catch {
+    return [];
+  }
+}
+
+export async function getOrder(id: string): Promise<Order | undefined> {
+  try {
+    return fromBackendOrder(await api.get<BackendOrder>(`/api/v1/orders/${encodeURIComponent(id)}`));
+  } catch {
+    return undefined;
+  }
 }
 
 export interface PlaceOrderInput {
@@ -86,89 +266,59 @@ export interface PlaceOrderInput {
   pickupCommunityZh: string;
 }
 
-export function placeOrder(input: PlaceOrderInput): Order {
-  const products = listProducts();
-  const orderItems = input.items
-    .map((line) => {
-      const p = products.find((pp) => pp.id === line.productId);
-      if (!p) return null;
-      return {
-        productId: p.id,
-        nameEn: p.nameEn,
-        nameZh: p.nameZh,
-        imageUrl: p.imageUrl,
-        unitPrice: p.price,
-        quantity: line.quantity,
-      };
-    })
-    .filter((x): x is NonNullable<typeof x> => x !== null);
-
-  const subtotal = orderItems.reduce(
-    (sum, it) => sum + it.unitPrice * it.quantity,
-    0,
-  );
-  const deliveryFee = subtotal >= 5000 ? 0 : 199; // free over $50
-  const total = subtotal + deliveryFee;
-
-  const order: Order = {
-    id: uid("ord"),
-    userOpenid: input.userOpenid,
-    guestName: input.guestName,
-    items: orderItems,
-    subtotal,
-    deliveryFee,
-    total,
-    status: "CONFIRMED",
-    createdAt: new Date().toISOString(),
+export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
+  const order = await api.post<BackendOrder>("/api/v1/orders", {
+    items: input.items,
     pickupCommunityEn: input.pickupCommunityEn,
     pickupCommunityZh: input.pickupCommunityZh,
-  };
-
-  const all = readJSON<Order[]>(StorageKeys.orders, []);
-  all.push(order);
-  writeJSON(StorageKeys.orders, all);
-  return order;
+    guestName: input.guestName,
+  });
+  return fromBackendOrder(order);
 }
 
-export function updateOrderStatus(orderId: string, status: OrderStatus): Order | undefined {
-  const all = readJSON<Order[]>(StorageKeys.orders, []);
-  const idx = all.findIndex((o) => o.id === orderId);
-  if (idx === -1) return undefined;
-  all[idx] = { ...all[idx], status };
-  writeJSON(StorageKeys.orders, all);
-  return all[idx];
+export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order | undefined> {
+  try {
+    const o = await api.patch<BackendOrder>(`/api/v1/admin/orders/${encodeURIComponent(orderId)}`, { status });
+    return fromBackendOrder(o);
+  } catch {
+    return undefined;
+  }
 }
 
-// --- Activity -------------------------------------------------------------
+// ---- Activity ------------------------------------------------------------
 
-export function listActivities(filterUser?: string | null): Activity[] {
-  const all = readJSON<Activity[]>(StorageKeys.activities, []);
-  const sorted = [...all].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-  );
-  if (!filterUser) return sorted;
-  return sorted.filter((a) => a.userOpenid === filterUser);
+export async function listActivities(filterUser?: string | null): Promise<Activity[]> {
+  try {
+    const rows = await api.get<BackendActivity[]>("/api/v1/admin/activities");
+    const all = rows.map(fromBackendActivity);
+    if (!filterUser) return all;
+    return all.filter((a) => a.userOpenid === filterUser);
+  } catch {
+    return [];
+  }
 }
 
 export function logActivity(
   type: ActivityType,
-  userOpenid: string | null,
+  userId: string | null,
   meta?: Record<string, unknown>,
 ): Activity {
-  const all = readJSON<Activity[]>(StorageKeys.activities, []);
-  const a: Activity = {
-    id: uid("act"),
+  // Fire-and-forget — fan out to backend but do not await; return a synthetic
+  // record so the existing call sites stay synchronous.
+  const synthetic: Activity = {
+    id: `act_${Date.now()}_${Math.floor(Math.random() * 1e6).toString(16)}`,
     type,
-    userOpenid,
+    userOpenid: userId,
     meta,
     createdAt: new Date().toISOString(),
   };
-  all.push(a);
-  writeJSON(StorageKeys.activities, all);
-  return a;
+  if (typeof window !== "undefined") {
+    void api.post("/api/v1/events/track", { type, meta: meta ?? {} }).catch(() => {});
+  }
+  return synthetic;
 }
 
-// --- Stats (admin) --------------------------------------------------------
+// ---- Stats (admin) -------------------------------------------------------
 
 export interface AdminStats {
   totalUsers: number;
@@ -179,73 +329,30 @@ export interface AdminStats {
   revenueByCategory: { categorySlug: string; revenue: number }[];
 }
 
-export function computeStats(): AdminStats {
-  const orders = listOrders();
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-
-  const ordersToday = orders.filter(
-    (o) => new Date(o.createdAt) >= today,
-  );
-  const revenueTodayCents = ordersToday.reduce((s, o) => s + o.total, 0);
-
-  // Track unique users with at least one activity
-  const acts = listActivities();
-  const seen = new Set<string>();
-  acts.forEach((a) => a.userOpenid && seen.add(a.userOpenid));
-  const totalUsers = seen.size;
-
-  // Last 7 days timeline
-  const ordersLast7d: { date: string; orders: number; revenue: number }[] = [];
-  for (let i = 6; i >= 0; i--) {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - i);
-    const next = new Date(d);
-    next.setDate(d.getDate() + 1);
-    const inWindow = orders.filter((o) => {
-      const t = new Date(o.createdAt);
-      return t >= d && t < next;
-    });
-    ordersLast7d.push({
-      date: `${d.getMonth() + 1}/${d.getDate()}`,
-      orders: inWindow.length,
-      revenue: Math.round(inWindow.reduce((s, o) => s + o.total, 0) / 100),
-    });
+export async function computeStats(): Promise<AdminStats> {
+  try {
+    const s = await api.get<BackendStats>("/api/v1/admin/stats");
+    return s;
+  } catch {
+    return {
+      totalUsers: 0,
+      ordersToday: 0,
+      revenueTodayCents: 0,
+      topCategorySlug: null,
+      ordersLast7d: [],
+      revenueByCategory: [],
+    };
   }
-
-  // Revenue by category (uses current product map for category lookup)
-  const products = listProducts();
-  const productCategoryMap = new Map(products.map((p) => [p.id, p.categorySlug]));
-  const byCat = new Map<string, number>();
-  orders.forEach((o) => {
-    o.items.forEach((it) => {
-      const cat = productCategoryMap.get(it.productId);
-      if (!cat) return;
-      byCat.set(cat, (byCat.get(cat) ?? 0) + it.unitPrice * it.quantity);
-    });
-  });
-  const revenueByCategory = [...byCat.entries()]
-    .map(([categorySlug, revenue]) => ({ categorySlug, revenue }))
-    .sort((a, b) => b.revenue - a.revenue);
-
-  const topCategorySlug = revenueByCategory[0]?.categorySlug ?? null;
-
-  return {
-    totalUsers,
-    ordersToday: ordersToday.length,
-    revenueTodayCents,
-    topCategorySlug,
-    ordersLast7d,
-    revenueByCategory,
-  };
 }
 
 /** Aggregate user stats for the admin /admin/users page. */
-export function listUserSummaries() {
-  const allOrders = listOrders();
-  const allActivities = listActivities();
-  return wechatAccounts
+export async function listUserSummaries() {
+  const [users, allOrders, allActivities] = await Promise.all([
+    listUsers(),
+    listOrders(),
+    listActivities(),
+  ]);
+  return users
     .map((acc) => {
       const orders = allOrders.filter((o) => o.userOpenid === acc.openid);
       const activities = allActivities.filter((a) => a.userOpenid === acc.openid);
@@ -259,10 +366,33 @@ export function listUserSummaries() {
         activityCount: activities.length,
       };
     })
-    .filter((s) => s.activityCount > 0 || s.account.role === "admin")
     .sort((a, b) => {
       const at = a.lastActivityAt ? new Date(a.lastActivityAt).getTime() : 0;
       const bt = b.lastActivityAt ? new Date(b.lastActivityAt).getTime() : 0;
       return bt - at;
     });
+}
+
+// ---- Cart sync (server-backed for signed-in users) -----------------------
+
+export interface BackendCart {
+  cartId: string;
+  items: { id: string; productId: string; quantity: number }[];
+  subtotalCents: number;
+}
+
+export async function fetchServerCart(): Promise<BackendCart | null> {
+  try {
+    return await api.get<BackendCart>("/api/v1/cart");
+  } catch {
+    return null;
+  }
+}
+
+export async function mergeGuestCart(items: { productId: string; quantity: number }[]): Promise<BackendCart | null> {
+  try {
+    return await api.post<BackendCart>("/api/v1/cart/merge", { items });
+  } catch {
+    return null;
+  }
 }
