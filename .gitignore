@@ -34,4 +34,10 @@ next-env.d.ts
 # local dev logs
 dev.log
 npm-install.log
+next-dev.log
+
+# backend
+backend/target/
+backend/.env
+backend/.mvn/wrapper/maven-wrapper.jar
 
