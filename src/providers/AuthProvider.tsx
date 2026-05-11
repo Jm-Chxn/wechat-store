@@ -46,6 +46,7 @@ function deriveName(rawUser: User, profileNickname: string | null): string {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [session, setSession] = React.useState<Session | null>(null);
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isReady, setReady] = React.useState(false);
@@ -155,8 +156,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await supabase.auth.signOut();
     } catch {
       // Ignore sign-out failures so UI can still clear client state via auth listener.
+    } finally {
+      router.refresh();
     }
-  }, []);
+  }, [router]);
 
   const value = React.useMemo<AuthContextValue>(
     () => ({
