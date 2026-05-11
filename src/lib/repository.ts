@@ -6,7 +6,7 @@
 // promises.
 
 import { products as seedProducts } from "@/data/products";
-import { api } from "@/lib/api/client";
+import { api, BACKEND_ENABLED } from "@/lib/api/client";
 import type {
   Activity,
   ActivityType,
@@ -178,11 +178,14 @@ export async function listProducts(): Promise<Product[]> {
 }
 
 export async function getProduct(slugOrId: string): Promise<Product | undefined> {
+  const local = seedProducts.find((p) => p.slug === slugOrId || p.id === slugOrId);
+  if (local) return local;
   try {
+    if (!BACKEND_ENABLED) return undefined;
     const p = await api.get<BackendProduct>(`/api/v1/products/${encodeURIComponent(slugOrId)}`);
     return fromBackendProduct(p);
   } catch {
-    return seedProducts.find((p) => p.slug === slugOrId || p.id === slugOrId);
+    return undefined;
   }
 }
 
@@ -383,6 +386,7 @@ export interface BackendCart {
 
 export async function fetchServerCart(): Promise<BackendCart | null> {
   try {
+    if (!BACKEND_ENABLED) return null;
     return await api.get<BackendCart>("/api/v1/cart");
   } catch {
     return null;
@@ -391,6 +395,7 @@ export async function fetchServerCart(): Promise<BackendCart | null> {
 
 export async function mergeGuestCart(items: { productId: string; quantity: number }[]): Promise<BackendCart | null> {
   try {
+    if (!BACKEND_ENABLED) return null;
     return await api.post<BackendCart>("/api/v1/cart/merge", { items });
   } catch {
     return null;
