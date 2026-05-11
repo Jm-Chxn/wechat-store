@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCart } from "@/providers/CartProvider";
-import { listProducts } from "@/lib/repository";
+import { getProduct } from "@/lib/repository";
 import { formatPrice } from "@/lib/utils";
 import type { Product } from "@/types";
 
@@ -18,13 +18,33 @@ export default function CartPage() {
   const { lines, setQuantity, remove } = useCart();
   const router = useRouter();
   const [products, setProducts] = React.useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = React.useState(false);
   const [promo, setPromo] = React.useState("");
 
+  const productIdsKey = React.useMemo(
+    () => [...new Set(lines.map((l) => l.productId))].sort().join(","),
+    [lines],
+  );
+
   React.useEffect(() => {
+    if (!productIdsKey) {
+      setProducts([]);
+      setProductsLoading(false);
+      return;
+    }
     let cancelled = false;
-    void listProducts().then((p) => { if (!cancelled) setProducts(p); });
+    const ids = productIdsKey.split(",");
+    setProductsLoading(true);
+    void Promise.all(ids.map((id) => getProduct(id)))
+      .then((rows) => {
+        if (cancelled) return;
+        setProducts(rows.filter((p): p is Product => p !== undefined));
+      })
+      .finally(() => {
+        if (!cancelled) setProductsLoading(false);
+      });
     return () => { cancelled = true; };
-  }, []);
+  }, [productIdsKey]);
 
   const detailed = lines
     .map((l) => {
@@ -39,6 +59,19 @@ export default function CartPage() {
   );
   const deliveryFee = subtotal >= 5000 || subtotal === 0 ? 0 : 199;
   const total = subtotal + deliveryFee;
+
+  if (lines.length > 0 && productsLoading) {
+    return (
+      <div className="container py-16">
+        <div className="mx-auto flex max-w-md flex-col items-center gap-4 rounded-2xl border border-border bg-surface p-10 text-center">
+          <span className="grid h-14 w-14 animate-pulse place-items-center rounded-full bg-secondary text-muted-foreground">
+            <ShoppingBag className="h-6 w-6" />
+          </span>
+          <p className="text-muted-foreground">{t("common.loading")}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (detailed.length === 0) {
     return (
