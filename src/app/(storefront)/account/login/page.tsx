@@ -72,7 +72,9 @@ function LoginPageInner() {
   });
 
   const onGoogle = async () => {
-    await signInWithGoogle(next);
+    setSignInError(null);
+    const { error } = await signInWithGoogle(next);
+    if (error) setSignInError(error || t("login.signInError"));
   };
 
   return (

@@ -55,18 +55,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       return;
     }
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("nickname, avatar_url, role")
-      .eq("user_id", sess.user.id)
-      .single();
     let role: Role = "user";
     let nickname: string | null = null;
     let avatarUrl: string | null = null;
-    if (!error && data) {
-      role = (data.role === "admin" ? "admin" : "user") as Role;
-      nickname = (data.nickname as string | null) ?? null;
-      avatarUrl = (data.avatar_url as string | null) ?? null;
+    try {
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("nickname, avatar_url, role")
+        .eq("user_id", sess.user.id)
+        .single();
+      if (!error && data) {
+        role = (data.role === "admin" ? "admin" : "user") as Role;
+        nickname = (data.nickname as string | null) ?? null;
+        avatarUrl = (data.avatar_url as string | null) ?? null;
+      }
+    } catch {
+      // Keep default user role/profile if profile lookup fails.
     }
     setUser({
       id: sess.user.id,
@@ -79,16 +83,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     let isMounted = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!isMounted) return;
-      setSession(data.session);
-      void refreshProfile(data.session).finally(() => {
+    void supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!isMounted) return;
+        setSession(data.session);
+        await refreshProfile(data.session);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setSession(null);
+        setUser(null);
+      })
+      .finally(() => {
         if (isMounted) setReady(true);
       });
-    });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
       setSession(sess);
-      await refreshProfile(sess);
+      try {
+        await refreshProfile(sess);
+      } catch {
+        setUser(null);
+      } finally {
+        setReady(true);
+      }
     });
     return () => {
       isMounted = false;
@@ -97,28 +115,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshProfile]);
 
   const signInWithPassword = React.useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to sign in.";
+      return { error: message };
+    }
   }, []);
 
   const signUpWithPassword = React.useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to create account.";
+      return { error: message };
+    }
   }, []);
 
   const signInWithGoogle = React.useCallback(async (returnTo?: string) => {
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-    const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${origin}/auth/callback${target}` },
-    });
-    return { error: error?.message ?? null };
+    try {
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+      const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${origin}/auth/callback${target}` },
+      });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to sign in with Google.";
+      return { error: message };
+    }
   }, []);
 
   const signOut = React.useCallback(async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore sign-out failures so UI can still clear client state via auth listener.
+    }
   }, []);
 
   const value = React.useMemo<AuthContextValue>(
