@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { LogIn } from "lucide-react";
+import { ArrowLeft, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -19,10 +19,11 @@ import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCart } from "@/providers/CartProvider";
 import { getProduct, placeOrder, logActivity } from "@/lib/repository";
-import { formatPrice } from "@/lib/utils";
+import { cn, formatPrice } from "@/lib/utils";
 import type { Product } from "@/types";
 
 const DELIVERY_THRESHOLD_CENTS = 15000;
+const ORDER_SUMMARY_MAX_VISIBLE = 10;
 
 const LOWER_MAINLAND_CITIES = [
   { value: "vancouver", en: "Vancouver", zh: "温哥华" },
@@ -123,6 +124,9 @@ export default function CheckoutPage() {
     !cartReady ||
     (lines.length > 0 && (productsLoading || detailed.length < lines.length));
 
+  const contactRow = user ? 2 : 3;
+  const deliveryRow = user ? 3 : 4;
+
   const goLogin = () => {
     router.push(`/account/login?next=${encodeURIComponent("/checkout")}`);
   };
@@ -186,35 +190,54 @@ export default function CheckoutPage() {
 
   return (
     <div className="container py-8">
-      <h1 className="mb-6 text-3xl font-semibold">{t("checkout.title")}</h1>
+      <form
+        onSubmit={onPlaceOrder}
+        className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-6 lg:grid-cols-[auto_1fr_380px]"
+      >
+        <h1 className="col-start-2 row-start-1 text-3xl font-semibold">
+          {t("checkout.title")}
+        </h1>
 
-      <form onSubmit={onPlaceOrder} className="grid gap-8 lg:grid-cols-[1fr,380px]">
-        <div className="space-y-6">
-          {!user && (
-            <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-amber-soft/50 bg-amber-soft/10 p-4">
-              <span className="text-sm text-[#7a5410]">
-                {t("checkout.signInRequired")}
-              </span>
-              <Button
-                type="button"
-                size="sm"
-                onClick={goLogin}
-                className="ml-auto"
-              >
-                <LogIn className="h-4 w-4" />
-                {t("nav.signIn")}
-              </Button>
-            </div>
-          )}
+        {!user && (
+          <div className="col-start-2 row-start-2 flex flex-wrap items-center gap-3 rounded-2xl border border-amber-soft/50 bg-amber-soft/10 p-4">
+            <span className="text-sm text-[#7a5410]">
+              {t("checkout.signInRequired")}
+            </span>
+            <Button
+              type="button"
+              size="sm"
+              onClick={goLogin}
+              className="ml-auto"
+            >
+              <LogIn className="h-4 w-4" />
+              {t("nav.signIn")}
+            </Button>
+          </div>
+        )}
 
-          <section className="space-y-4 rounded-2xl border border-border bg-surface p-5">
-            <div className="space-y-1">
-              <h2 className="text-sm font-semibold uppercase tracking-wide">
-                {t("checkout.contact")}
-              </h2>
-              <p className="text-xs text-muted-foreground">{t("checkout.requiredNote")}</p>
-            </div>
-            <div className="grid gap-3 sm:grid-cols-2">
+        <Button
+          type="button"
+          variant="default"
+          size="sm"
+          className="col-start-1 shrink-0 self-start"
+          style={{ gridRowStart: contactRow }}
+          onClick={() => router.push("/cart")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          {t("checkout.backToCart")}
+        </Button>
+
+        <section
+          className="col-start-2 space-y-4 rounded-2xl border border-border bg-surface p-5"
+          style={{ gridRowStart: contactRow }}
+        >
+              <div className="space-y-1">
+                <h2 className="text-sm font-semibold uppercase tracking-wide">
+                  {t("checkout.contact")}
+                </h2>
+                <p className="text-xs text-muted-foreground">{t("checkout.requiredNote")}</p>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <Label htmlFor="ck-name">
                   {t("checkout.contactName")}
@@ -265,13 +288,16 @@ export default function CheckoutPage() {
                     </SelectItem>
                   </SelectContent>
                 </Select>
-                <p className="text-xs text-muted-foreground">{t("checkout.deliveryNote")}</p>
+                <p className="pt-5 text-xs text-muted-foreground">{t("checkout.deliveryNote")}</p>
               </div>
-            </div>
-          </section>
+              </div>
+        </section>
 
-          {qualifiesForDelivery ? (
-            <section className="space-y-4 rounded-2xl border border-border bg-surface p-5">
+        {qualifiesForDelivery ? (
+          <section
+            className="col-start-2 space-y-4 rounded-2xl border border-border bg-surface p-5"
+            style={{ gridRowStart: deliveryRow }}
+          >
               <div className="space-y-1">
                 <h2 className="text-sm font-semibold uppercase tracking-wide">
                   {t("checkout.deliveryAddress")}
@@ -334,10 +360,10 @@ export default function CheckoutPage() {
                   />
                 </div>
               </div>
-            </section>
-          ) : null}
+          </section>
+        ) : null}
 
-          {/* Payment form hidden for now — demo card fields preserved for later use.
+        {/* Payment form hidden for now — demo card fields preserved for later use.
           <section className="space-y-4 rounded-2xl border border-border bg-surface p-5">
             <div className="flex items-center justify-between">
               <h2 className="text-sm font-semibold uppercase tracking-wide">
@@ -370,14 +396,30 @@ export default function CheckoutPage() {
               </div>
             </div>
           </section>
-          */}
-        </div>
+        */}
 
-        <aside className="h-fit space-y-4 rounded-2xl border border-border bg-surface p-5">
+        <aside
+          className={cn(
+            "col-span-2 h-fit space-y-4 rounded-2xl border border-border bg-surface p-5 lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:row-span-4",
+            qualifiesForDelivery
+              ? user
+                ? "row-start-4"
+                : "row-start-5"
+              : user
+                ? "row-start-3"
+                : "row-start-4",
+          )}
+        >
           <h2 className="text-sm font-semibold uppercase tracking-wide">
             {t("checkout.orderSummary")}
           </h2>
-          <ul className="space-y-3">
+          <ul
+            className={cn(
+              "space-y-3",
+              detailed.length > ORDER_SUMMARY_MAX_VISIBLE &&
+                "max-h-[calc(3rem*10+0.75rem*9)] overflow-y-auto pr-1",
+            )}
+          >
             {detailed.map(({ product, quantity }) => (
               <li key={product.id} className="flex items-center gap-3">
                 <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl">
@@ -417,3 +459,4 @@ export default function CheckoutPage() {
     </div>
   );
 }
+

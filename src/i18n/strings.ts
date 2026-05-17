@@ -158,6 +158,7 @@ export const dictionary = {
   "checkout.city": { en: "City", zh: "城市" },
   "checkout.postalCode": { en: "Postal code", zh: "邮编" },
   "checkout.selectCity": { en: "Select a city", zh: "选择城市" },
+  "checkout.backToCart": { en: "Back to cart", zh: "返回购物车" },
 
   // order confirmed
   "order.confirmed": { en: "Order Confirmed", zh: "订单已确认" },
