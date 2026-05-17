@@ -141,6 +141,23 @@ export const dictionary = {
   "checkout.communityMaple": { en: "Maple Street", zh: "枫树街" },
   "checkout.communityCedar": { en: "Cedar Lane", zh: "雪松巷" },
   "checkout.communityRiver": { en: "Riverside Court", zh: "河滨苑" },
+  "checkout.requiredNote": {
+    en: "Fields marked with * are required",
+    zh: "标有 * 的字段为必填项",
+  },
+  "checkout.deliveryNote": {
+    en: "Orders over $150 will be delivered to your home.",
+    zh: "订单满 $150 将送货上门。",
+  },
+  "checkout.deliveryAddress": { en: "Delivery address", zh: "送货地址" },
+  "checkout.addressLine1": { en: "Street address", zh: "街道地址" },
+  "checkout.addressLine2": {
+    en: "Apartment / building # (optional)",
+    zh: "公寓 / 楼号（选填）",
+  },
+  "checkout.city": { en: "City", zh: "城市" },
+  "checkout.postalCode": { en: "Postal code", zh: "邮编" },
+  "checkout.selectCity": { en: "Select a city", zh: "选择城市" },
 
   // order confirmed
   "order.confirmed": { en: "Order Confirmed", zh: "订单已确认" },
