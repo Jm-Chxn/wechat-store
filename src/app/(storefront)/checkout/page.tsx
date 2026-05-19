@@ -35,6 +35,7 @@ export default function CheckoutPage() {
   );
   const [card, setCard] = React.useState({ number: "", expiry: "", cvc: "", name: "" });
   const [submitting, setSubmitting] = React.useState(false);
+  const [orderError, setOrderError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -76,6 +77,7 @@ export default function CheckoutPage() {
     }
     if (detailed.length === 0) return;
     setSubmitting(true);
+    setOrderError(null);
     try {
       const order = await placeOrder({
         userOpenid: user.id,
@@ -90,7 +92,9 @@ export default function CheckoutPage() {
       });
       clear();
       router.replace(`/order/confirmed/${order.id}`);
-    } catch {
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Order failed. Please try again.";
+      setOrderError(msg);
       setSubmitting(false);
     }
   };
@@ -266,6 +270,11 @@ export default function CheckoutPage() {
               <span>{formatPrice(total)}</span>
             </div>
           </div>
+          {orderError && (
+            <p className="rounded-xl bg-destructive/10 px-4 py-2.5 text-sm font-medium text-destructive">
+              {orderError}
+            </p>
+          )}
           <Button type="submit" className="w-full" size="lg" disabled={submitting}>
             {t("checkout.placeOrder")}
           </Button>

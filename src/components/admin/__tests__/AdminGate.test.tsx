@@ -41,13 +41,15 @@ describe("AdminGate", () => {
       user: { id: "u1", role: "admin", email: "a@b.c", name: "A", avatarUrl: null },
       isAdmin: true,
     });
+    // Re-import both after resetModules so they share the same LanguageContext instance.
     const { AdminGate: Gated } = await import("@/components/admin/AdminGate");
+    const { LanguageProvider: FreshLP } = await import("@/i18n/LanguageProvider");
     render(
-      <LanguageProvider>
+      <FreshLP>
         <Gated>
           <div data-testid="content">secret</div>
         </Gated>
-      </LanguageProvider>,
+      </FreshLP>,
     );
     expect(screen.getByTestId("content").textContent).toBe("secret");
   });

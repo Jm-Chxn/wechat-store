@@ -61,33 +61,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     let avatarUrl: string | null = null;
 
     try {
-      // Race the profile query against a 5-second timeout so a missing
-      // `profiles` table or a cold-starting Supabase project never blocks auth.
-      const timeoutPromise = new Promise<null>((resolve) =>
-        setTimeout(() => resolve(null), 5000),
-      );
-      const queryPromise = supabase
-        .from("profiles")
-        .select("nickname, avatar_url, role")
-        .eq("user_id", sess.user.id)
-        .single();
+      // Fetch profile via the /api/v1/me API route which uses the service-role
+      // key, bypassing any missing RLS SELECT policies on the profiles table.
+      // Race against a 10-second timeout to handle cold-starting Supabase projects.
+      const token = sess.access_token;
+      const fetchPromise = fetch("/api/v1/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      }).then((r) => (r.ok ? (r.json() as Promise<{ role: string; nickname: string | null; avatarUrl: string | null }>) : null));
 
-      const result = await Promise.race([queryPromise, timeoutPromise]);
+      const timeoutPromise = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 10000),
+      );
+
+      const result = await Promise.race([fetchPromise, timeoutPromise]);
 
       if (result === null) {
-        console.warn("[AuthProvider] Profile query timed out – using defaults.");
+        console.warn("[AuthProvider] Profile fetch timed out – using defaults.");
       } else {
-        const { data, error } = result;
-        if (error) {
-          console.warn("[AuthProvider] Profile query failed:", error.message);
-        } else if (data) {
-          role = (data.role === "admin" ? "admin" : "user") as Role;
-          nickname = (data.nickname as string | null) ?? null;
-          avatarUrl = (data.avatar_url as string | null) ?? null;
-        }
+        role = (result.role === "admin" ? "admin" : "user") as Role;
+        nickname = result.nickname ?? null;
+        avatarUrl = result.avatarUrl ?? null;
       }
     } catch (err) {
-      console.warn("[AuthProvider] Profile query threw:", err);
+      console.warn("[AuthProvider] Profile fetch threw:", err);
     }
 
     setUser({
