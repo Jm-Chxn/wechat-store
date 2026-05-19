@@ -1,6 +1,6 @@
 import { http, HttpResponse } from "msw";
 
-const BASE = "http://localhost:8080/api/v1";
+const BASE = "http://localhost:3000/api/v1";
 
 export const fixtures = {
   product: {
