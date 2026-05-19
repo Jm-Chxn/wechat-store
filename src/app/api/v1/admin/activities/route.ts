@@ -3,8 +3,9 @@ import { requireAdmin } from "@/app/api/_lib/auth";
 import { createAdminClient } from "@/app/api/_lib/supabase-admin";
 import { apiError, ok } from "@/app/api/_lib/response";
 import { mapActivity } from "@/app/api/_lib/mappers";
+import { withRoute } from "@/app/api/_lib/route-wrapper";
 
-export async function GET(request: NextRequest) {
+export const GET = withRoute("GET /api/v1/admin/activities", async (request: NextRequest) => {
   const authResult = await requireAdmin(request);
   if (authResult instanceof Response) return authResult;
 
@@ -14,6 +15,9 @@ export async function GET(request: NextRequest) {
     .select("*")
     .order("created_at", { ascending: false });
 
-  if (error) return apiError(500, error.message);
+  if (error) {
+    console.error("[GET admin/activities] select failed:", error);
+    return apiError(500, error.message);
+  }
   return ok((data ?? []).map((row) => mapActivity(row as Record<string, unknown>)));
-}
+});

@@ -2,9 +2,14 @@ import { type NextRequest } from "next/server";
 import { requireAuth } from "@/app/api/_lib/auth";
 import { createAdminClient } from "@/app/api/_lib/supabase-admin";
 import { apiError, ok } from "@/app/api/_lib/response";
-import { getOrCreateCart, fetchCartResponse } from "@/app/api/_lib/cart-helpers";
+import {
+  addOrIncrementCartItem,
+  getOrCreateCart,
+  fetchCartResponse,
+} from "@/app/api/_lib/cart-helpers";
+import { withRoute } from "@/app/api/_lib/route-wrapper";
 
-export async function POST(request: NextRequest) {
+export const POST = withRoute("POST /api/v1/cart/merge", async (request: NextRequest) => {
   const authResult = await requireAuth(request);
   if (authResult instanceof Response) return authResult;
   const { userId } = authResult;
@@ -18,28 +23,8 @@ export async function POST(request: NextRequest) {
 
   for (const guestItem of guestItems) {
     if (!guestItem.productId || guestItem.quantity < 1) continue;
-
-    const { data: existing } = await supabase
-      .from("cart_items")
-      .select("*")
-      .eq("cart_id", cart.id)
-      .eq("product_id", guestItem.productId)
-      .single();
-
-    if (existing) {
-      const existingRecord = existing as Record<string, unknown>;
-      await supabase
-        .from("cart_items")
-        .update({ quantity: (existingRecord.quantity as number) + guestItem.quantity })
-        .eq("id", existingRecord.id);
-    } else {
-      await supabase.from("cart_items").insert({
-        cart_id: cart.id,
-        product_id: guestItem.productId,
-        quantity: guestItem.quantity,
-      });
-    }
+    await addOrIncrementCartItem(supabase, cart.id as string, guestItem.productId, guestItem.quantity);
   }
 
   return ok(await fetchCartResponse(supabase, cart.id as string));
-}
+});

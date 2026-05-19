@@ -3,8 +3,9 @@ import { createAdminClient } from "@/app/api/_lib/supabase-admin";
 import { getAuthUser } from "@/app/api/_lib/auth";
 import { apiError, ok } from "@/app/api/_lib/response";
 import { mapActivity } from "@/app/api/_lib/mappers";
+import { withRoute } from "@/app/api/_lib/route-wrapper";
 
-export async function POST(request: NextRequest) {
+export const POST = withRoute("POST /api/v1/events/track", async (request: NextRequest) => {
   const body = await request.json().catch(() => null);
   if (!body?.type) return apiError(400, "type is required");
 
@@ -22,6 +23,9 @@ export async function POST(request: NextRequest) {
     .select()
     .single();
 
-  if (error) return apiError(500, error.message);
+  if (error) {
+    console.error("[POST /api/v1/events/track] insert failed:", error);
+    return apiError(500, error.message);
+  }
   return ok(mapActivity(data as Record<string, unknown>));
-}
+});

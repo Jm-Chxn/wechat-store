@@ -43,8 +43,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   React.useEffect(() => {
     if (!authReady) return;
     if (!user) {
-      setSynced(null);
-      setServerIds(new Map());
+      // Only clear if we were previously synced to a real user — that is the
+      // sign-out transition. In pure guest mode (synced === null) we leave the
+      // local cart alone so the storefront can still build a cart pre-login.
+      if (synced !== null) {
+        setLines([]);
+        writeJSON(StorageKeys.cart, []);
+        setSynced(null);
+        setServerIds(new Map());
+      }
       return;
     }
     if (synced === user.id) return;

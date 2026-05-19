@@ -1,17 +1,15 @@
 import { AdminGate } from "@/components/admin/AdminGate";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminShell } from "@/components/admin/AdminShell";
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+/**
+ * /admin/* renders inside the AdminShell — a deliberately distinct chrome
+ * (slate sidebar + topbar + light grey content area) so the surface reads
+ * as a separate "console" rather than the storefront's cream/marketing look.
+ */
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
     <AdminGate>
-      <div className="flex min-h-screen flex-col md:flex-row">
-        <AdminSidebar />
-        <main className="flex-1">{children}</main>
-      </div>
+      <AdminShell>{children}</AdminShell>
     </AdminGate>
   );
 }

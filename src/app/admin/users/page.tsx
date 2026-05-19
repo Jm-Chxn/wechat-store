@@ -1,206 +1,367 @@
 "use client";
 
 import * as React from "react";
-import {
-  Drawer,
-  DrawerContent,
-  DrawerDescription,
-  DrawerHeader,
-  DrawerTitle,
-} from "@/components/ui/drawer";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "@/i18n/LanguageProvider";
-import {
-  listActivities,
-  listOrders,
-  listUserSummaries,
-} from "@/lib/repository";
-import { formatDate, formatPrice, maskOpenid } from "@/lib/utils";
-import type { Activity, Order, WeChatAccount } from "@/types";
-import type { DictionaryKey } from "@/i18n/strings";
+import { Search, Mail, Phone, ShoppingBag, X, Calendar } from "lucide-react";
+import { adminApi, type AdminUser, type AdminOrder } from "@/lib/api/admin";
+import { formatDate, formatPrice } from "@/lib/utils";
 
+/**
+ * /admin/users — one row per registered customer.
+ *
+ * The previous version queried wx_openid against mock data and rendered nothing
+ * when the backend returned auth.users-shaped rows. This version is the
+ * single source of truth: it pulls real users from /api/v1/admin/users (which
+ * joins `profiles` to `auth.users` for email + phone), shows order count and
+ * total spent, and lets you click a row to see that customer's orders in a
+ * side drawer.
+ */
 export default function AdminUsersPage() {
-  const { t, locale } = useLanguage();
-  const [summaries, setSummaries] = React.useState<
-    Awaited<ReturnType<typeof listUserSummaries>>
-  >([]);
-  const [drawerUser, setDrawerUser] = React.useState<WeChatAccount | null>(null);
-  const [drawerOrders, setDrawerOrders] = React.useState<Order[]>([]);
-  const [drawerActs, setDrawerActs] = React.useState<Activity[]>([]);
+  const [users, setUsers] = React.useState<AdminUser[]>([]);
+  const [orders, setOrders] = React.useState<AdminOrder[]>([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState<string | null>(null);
+  const [search, setSearch] = React.useState("");
+  const [roleFilter, setRoleFilter] = React.useState<"ALL" | "user" | "admin">("ALL");
+  const [selected, setSelected] = React.useState<AdminUser | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
-    void listUserSummaries().then((s) => { if (!cancelled) setSummaries(s); });
-    return () => { cancelled = true; };
+    void (async () => {
+      try {
+        const [u, o] = await Promise.all([adminApi.listUsers(), adminApi.listOrders()]);
+        if (cancelled) return;
+        setUsers(u);
+        setOrders(o);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const open = async (acc: WeChatAccount) => {
-    setDrawerUser(acc);
-    const [o, a] = await Promise.all([listOrders(acc.openid), listActivities(acc.openid)]);
-    setDrawerOrders(o);
-    setDrawerActs(a);
-  };
+  const filtered = React.useMemo(() => {
+    const term = search.trim().toLowerCase();
+    return users.filter((u) => {
+      if (roleFilter !== "ALL" && u.role !== roleFilter) return false;
+      if (!term) return true;
+      return [u.nickname ?? "", u.email ?? "", u.phone ?? "", u.userId]
+        .join(" ")
+        .toLowerCase()
+        .includes(term);
+    });
+  }, [users, roleFilter, search]);
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("admin.usersTitle")}</h1>
-        <p className="text-sm text-muted-foreground">{t("admin.usersBlurb")}</p>
-      </div>
-      <div className="rounded-2xl border border-border bg-surface">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead></TableHead>
-              <TableHead>{t("admin.usersTitle")}</TableHead>
-              <TableHead>openid</TableHead>
-              <TableHead>{t("account.role")}</TableHead>
-              <TableHead>{t("admin.usersTotalOrders")}</TableHead>
-              <TableHead>{t("admin.usersTotalSpent")}</TableHead>
-              <TableHead>{t("admin.usersLastActivity")}</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {summaries.length === 0 && (
-              <TableRow>
-                <TableCell colSpan={7} className="py-10 text-center text-muted-foreground">
-                  {t("admin.empty")}
-                </TableCell>
-              </TableRow>
+    <div className="space-y-5">
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+            Customers
+          </div>
+          <h1 className="mt-1 text-2xl font-semibold text-slate-900">Registered users</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            {loading
+              ? "Loading…"
+              : `${filtered.length} of ${users.length} customer${users.length === 1 ? "" : "s"}`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search by name, email, phone…"
+              className="w-72 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+            />
+          </div>
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value as typeof roleFilter)}
+            className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 focus:outline-none"
+            aria-label="Filter by role"
+          >
+            <option value="ALL">All roles</option>
+            <option value="user">Customers</option>
+            <option value="admin">Admins</option>
+          </select>
+        </div>
+      </header>
+
+      {error && (
+        <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
+          <div className="font-semibold">Failed to load users</div>
+          <div className="mt-1 font-mono text-xs">{error}</div>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
+        <table className="w-full table-fixed border-collapse text-sm">
+          <colgroup>
+            <col className="w-72" />
+            <col className="w-44" />
+            <col className="w-44" />
+            <col className="w-24" />
+            <col className="w-28" />
+            <col className="w-32" />
+            <col className="w-32" />
+          </colgroup>
+          <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
+            <tr>
+              <th className="px-4 py-2.5">Customer</th>
+              <th className="px-4 py-2.5">Email</th>
+              <th className="px-4 py-2.5">Phone</th>
+              <th className="px-4 py-2.5">Role</th>
+              <th className="px-4 py-2.5 text-right">Orders</th>
+              <th className="px-4 py-2.5 text-right">Total spent</th>
+              <th className="px-4 py-2.5">Last seen</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {loading && (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                  Loading…
+                </td>
+              </tr>
             )}
-            {summaries.map((s) => (
-              <TableRow
-                key={s.account.openid}
-                onClick={() => open(s.account)}
-                className="cursor-pointer"
+            {!loading && filtered.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                  No customers match.
+                </td>
+              </tr>
+            )}
+            {filtered.map((u) => (
+              <tr
+                key={u.userId}
+                onClick={() => setSelected(u)}
+                className="cursor-pointer hover:bg-slate-50"
               >
-                <TableCell>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={s.account.avatarUrl}
-                    alt={s.account.nicknameEn}
-                    className="h-9 w-9 rounded-full bg-secondary object-cover"
-                  />
-                </TableCell>
-                <TableCell>
-                  <div className="font-medium">
-                    {locale === "zh"
-                      ? s.account.nicknameZh
-                      : s.account.nicknameEn}
+                <td className="px-4 py-3">
+                  <div className="flex items-center gap-2.5">
+                    {u.avatarUrl ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={u.avatarUrl}
+                        alt={u.nickname ?? "user"}
+                        className="h-8 w-8 rounded-full bg-slate-100 object-cover"
+                      />
+                    ) : (
+                      <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
+                        {(u.nickname ?? u.email ?? "?").charAt(0).toUpperCase()}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium text-slate-900">
+                        {u.nickname ?? u.email ?? "(no name)"}
+                      </div>
+                      <code className="block truncate font-mono text-[10px] text-slate-500">
+                        {u.userId.slice(0, 8)}…
+                      </code>
+                    </div>
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {locale === "zh"
-                      ? s.account.nicknameEn
-                      : s.account.nicknameZh}
-                  </div>
-                </TableCell>
-                <TableCell className="font-mono text-xs">
-                  {maskOpenid(s.account.openid)}
-                </TableCell>
-                <TableCell>
-                  <Badge variant={s.account.role === "admin" ? "admin" : "secondary"}>
-                    {t(s.account.role === "admin" ? "account.role.admin" : "account.role.user")}
-                  </Badge>
-                </TableCell>
-                <TableCell>{s.orderCount}</TableCell>
-                <TableCell>{formatPrice(s.totalSpent)}</TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {s.lastActivityAt ? formatDate(s.lastActivityAt, locale) : "—"}
-                </TableCell>
-              </TableRow>
+                </td>
+                <td className="truncate px-4 py-3 text-xs text-slate-700">
+                  {u.email ?? <span className="text-slate-400">—</span>}
+                </td>
+                <td className="px-4 py-3 font-mono text-xs text-slate-700">
+                  {u.phone ?? <span className="text-slate-400">—</span>}
+                </td>
+                <td className="px-4 py-3">
+                  <span
+                    className={
+                      u.role === "admin"
+                        ? "rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-white"
+                        : "rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-700"
+                    }
+                  >
+                    {u.role}
+                  </span>
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-slate-900">
+                  {u.orderCount}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums font-medium text-slate-900">
+                  {formatPrice(u.totalSpentCents)}
+                </td>
+                <td className="px-4 py-3 text-xs text-slate-500">
+                  {u.lastSeenAt ? formatDate(u.lastSeenAt) : "—"}
+                </td>
+              </tr>
             ))}
-          </TableBody>
-        </Table>
+          </tbody>
+        </table>
       </div>
 
-      <Drawer open={!!drawerUser} onOpenChange={(v) => !v && setDrawerUser(null)}>
-        <DrawerContent>
-          {drawerUser && (
-            <>
-              <DrawerHeader>
-                <DrawerTitle className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={drawerUser.avatarUrl}
-                    alt={drawerUser.nicknameEn}
-                    className="h-10 w-10 rounded-full bg-secondary object-cover"
-                  />
-                  <span>
-                    {locale === "zh" ? drawerUser.nicknameZh : drawerUser.nicknameEn}
-                  </span>
-                  {drawerUser.role === "admin" && (
-                    <Badge variant="admin">{t("account.role.admin")}</Badge>
-                  )}
-                </DrawerTitle>
-                <DrawerDescription>
-                  {drawerUser.openid} · {t("account.joined")} {formatDate(drawerUser.joinedAt, locale)}
-                </DrawerDescription>
-              </DrawerHeader>
-              <div className="grid gap-5 overflow-y-auto p-5">
-                <section>
-                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide">
-                    {t("admin.userDrawerOrders")} ({drawerOrders.length})
-                  </h3>
-                  {drawerOrders.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t("admin.empty")}
-                    </p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {drawerOrders.map((o) => (
-                        <li
-                          key={o.id}
-                          className="rounded-xl border border-border p-3 text-sm"
-                        >
-                          <div className="flex justify-between">
-                            <span className="font-medium">{o.id}</span>
-                            <span>{formatPrice(o.total)}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground">
-                            {formatDate(o.createdAt, locale)} · {t(`order.status.${o.status}` as const)}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
-                <section>
-                  <h3 className="mb-2 text-sm font-semibold uppercase tracking-wide">
-                    {t("admin.userDrawerActivity")} ({drawerActs.length})
-                  </h3>
-                  {drawerActs.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">
-                      {t("admin.empty")}
-                    </p>
-                  ) : (
-                    <ul className="space-y-2">
-                      {drawerActs.map((a) => (
-                        <li key={a.id} className="text-sm">
-                          <span className="text-muted-foreground">
-                            {formatDate(a.createdAt, locale)} ·{" "}
-                          </span>
-                          <span>{t(`activity.${a.type}` as DictionaryKey)}</span>
-                          {a.meta?.productId ? (
-                            <span className="text-muted-foreground"> · {String(a.meta.productId)}</span>
-                          ) : null}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </section>
+      {selected && (
+        <UserDrawer
+          user={selected}
+          orders={orders.filter((o) => o.userId === selected.userId)}
+          onClose={() => setSelected(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+function UserDrawer({
+  user,
+  orders,
+  onClose,
+}: {
+  user: AdminUser;
+  orders: AdminOrder[];
+  onClose: () => void;
+}) {
+  React.useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  return (
+    <>
+      <div
+        className="fixed inset-0 z-40 bg-slate-900/30 backdrop-blur-sm"
+        onClick={onClose}
+        aria-hidden
+      />
+      <aside
+        className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col overflow-y-auto bg-white shadow-2xl"
+        role="dialog"
+        aria-label="User details"
+      >
+        <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
+          <div className="flex items-center gap-3">
+            {user.avatarUrl ? (
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={user.avatarUrl}
+                alt={user.nickname ?? "user"}
+                className="h-10 w-10 rounded-full bg-slate-100 object-cover"
+              />
+            ) : (
+              <span className="grid h-10 w-10 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+                {(user.nickname ?? user.email ?? "?").charAt(0).toUpperCase()}
+              </span>
+            )}
+            <div>
+              <div className="text-base font-semibold text-slate-900">
+                {user.nickname ?? user.email ?? "(no name)"}
               </div>
-            </>
-          )}
-        </DrawerContent>
-      </Drawer>
+              <code className="font-mono text-xs text-slate-500">{user.userId}</code>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </header>
+
+        <div className="space-y-5 px-5 py-5 text-sm">
+          <section className="rounded-xl bg-slate-50 p-4">
+            <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Contact
+            </div>
+            <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
+              <li className="flex items-center gap-1.5">
+                <Mail className="h-3 w-3 text-slate-400" />
+                {user.email ? (
+                  <a href={`mailto:${user.email}`} className="hover:underline">
+                    {user.email}
+                  </a>
+                ) : (
+                  <span className="text-slate-400">no email on file</span>
+                )}
+              </li>
+              <li className="flex items-center gap-1.5">
+                <Phone className="h-3 w-3 text-slate-400" />
+                {user.phone ? (
+                  <a href={`tel:${user.phone}`} className="hover:underline">
+                    {user.phone}
+                  </a>
+                ) : (
+                  <span className="text-slate-400">no phone on file</span>
+                )}
+              </li>
+              {user.createdAt && (
+                <li className="flex items-center gap-1.5">
+                  <Calendar className="h-3 w-3 text-slate-400" />
+                  Joined {formatDate(user.createdAt)}
+                </li>
+              )}
+            </ul>
+          </section>
+
+          <section className="grid grid-cols-2 gap-3">
+            <Stat label="Orders" value={String(user.orderCount)} />
+            <Stat label="Total spent" value={formatPrice(user.totalSpentCents)} emphasis />
+          </section>
+
+          <section>
+            <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <ShoppingBag className="h-3 w-3" />
+              Order history ({orders.length})
+            </div>
+            {orders.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-slate-200 px-4 py-6 text-center text-xs text-slate-500">
+                No orders yet.
+              </div>
+            ) : (
+              <ul className="space-y-2">
+                {orders.map((o) => (
+                  <li
+                    key={o.id}
+                    className="rounded-lg border border-slate-200 bg-white p-3 text-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <code className="font-mono text-[11px] text-slate-700">{o.id}</code>
+                      <span className="tabular-nums font-semibold text-slate-900">
+                        {formatPrice(o.totalCents)}
+                      </span>
+                    </div>
+                    <div className="mt-1 text-[11px] text-slate-500">
+                      {o.createdAt ? formatDate(o.createdAt) : "—"} · {o.status.toLowerCase()} ·{" "}
+                      {o.items.length} item{o.items.length === 1 ? "" : "s"}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        </div>
+      </aside>
+    </>
+  );
+}
+
+function Stat({ label, value, emphasis }: { label: string; value: string; emphasis?: boolean }) {
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white px-3 py-2.5">
+      <div className="text-[10px] font-semibold uppercase tracking-wider text-slate-500">
+        {label}
+      </div>
+      <div
+        className={
+          emphasis
+            ? "mt-0.5 text-lg font-semibold tabular-nums text-slate-900"
+            : "mt-0.5 text-lg font-semibold tabular-nums text-slate-900"
+        }
+      >
+        {value}
+      </div>
     </div>
   );
 }

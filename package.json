@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "seed": "node -e \"console.log('hi from npm')\""
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",

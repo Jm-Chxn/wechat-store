@@ -1,67 +1,102 @@
 import { type NextRequest } from "next/server";
 import { requireAuth } from "@/app/api/_lib/auth";
 import { createAdminClient } from "@/app/api/_lib/supabase-admin";
-import { apiError, noContent, ok } from "@/app/api/_lib/response";
+import { apiError, ok } from "@/app/api/_lib/response";
 import { fetchCartResponse } from "@/app/api/_lib/cart-helpers";
+import { withRoute } from "@/app/api/_lib/route-wrapper";
 
-export async function PATCH(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const authResult = await requireAuth(request);
-  if (authResult instanceof Response) return authResult;
-  const { userId } = authResult;
+type Ctx = { params: Promise<{ id: string }> };
 
-  const body = await request.json().catch(() => null);
-  if (body?.quantity === undefined || body.quantity < 0) {
-    return apiError(400, "quantity >= 0 required");
-  }
+export const PATCH = withRoute(
+  "PATCH /api/v1/cart/items/[id]",
+  async (request: NextRequest, ctx: Ctx) => {
+    const { id } = await ctx.params;
+    const authResult = await requireAuth(request);
+    if (authResult instanceof Response) return authResult;
+    const { userId } = authResult;
 
-  const supabase = createAdminClient();
-  const { data: item } = await supabase
-    .from("cart_items")
-    .select("*, carts!inner(user_id)")
-    .eq("id", id)
-    .single();
+    const body = await request.json().catch(() => null);
+    if (body?.quantity === undefined || body.quantity < 0) {
+      return apiError(400, "quantity >= 0 required");
+    }
 
-  const cartRecord = item as (Record<string, unknown> & { carts: { user_id: string } }) | null;
-  if (!cartRecord || cartRecord.carts.user_id !== userId) {
-    return apiError(404, "cart item not found");
-  }
+    const supabase = createAdminClient();
+    const { data: item, error: lookupError } = await supabase
+      .from("cart_items")
+      .select("*, carts!inner(user_id)")
+      .eq("id", id)
+      .single();
+    if (lookupError && lookupError.code !== "PGRST116") {
+      console.error("[cart/items/[id] PATCH] lookup error:", lookupError);
+      return apiError(500, lookupError.message);
+    }
 
-  if (body.quantity === 0) {
-    await supabase.from("cart_items").delete().eq("id", id);
-  } else {
-    await supabase.from("cart_items").update({ quantity: body.quantity }).eq("id", id);
-  }
+    const cartRecord = item as
+      | (Record<string, unknown> & { carts: { user_id: string }; cart_id: string })
+      | null;
+    if (!cartRecord || cartRecord.carts.user_id !== userId) {
+      return apiError(404, "cart item not found");
+    }
 
-  return ok(await fetchCartResponse(supabase, cartRecord.cart_id as string));
-}
+    if (body.quantity === 0) {
+      const { error: deleteError } = await supabase
+        .from("cart_items")
+        .delete()
+        .eq("id", id);
+      if (deleteError) {
+        console.error("[cart/items/[id] PATCH] delete error:", deleteError);
+        return apiError(500, deleteError.message);
+      }
+    } else {
+      const { error: updateError } = await supabase
+        .from("cart_items")
+        .update({ quantity: body.quantity })
+        .eq("id", id);
+      if (updateError) {
+        console.error("[cart/items/[id] PATCH] update error:", updateError);
+        return apiError(500, updateError.message);
+      }
+    }
 
-export async function DELETE(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const { id } = await params;
-  const authResult = await requireAuth(request);
-  if (authResult instanceof Response) return authResult;
-  const { userId } = authResult;
+    return ok(await fetchCartResponse(supabase, cartRecord.cart_id));
+  },
+);
 
-  const supabase = createAdminClient();
-  const { data: item } = await supabase
-    .from("cart_items")
-    .select("*, carts!inner(user_id)")
-    .eq("id", id)
-    .single();
+export const DELETE = withRoute(
+  "DELETE /api/v1/cart/items/[id]",
+  async (request: NextRequest, ctx: Ctx) => {
+    const { id } = await ctx.params;
+    const authResult = await requireAuth(request);
+    if (authResult instanceof Response) return authResult;
+    const { userId } = authResult;
 
-  const cartRecord = item as (Record<string, unknown> & { carts: { user_id: string } }) | null;
-  if (!cartRecord || cartRecord.carts.user_id !== userId) {
-    return apiError(404, "cart item not found");
-  }
+    const supabase = createAdminClient();
+    const { data: item, error: lookupError } = await supabase
+      .from("cart_items")
+      .select("*, carts!inner(user_id)")
+      .eq("id", id)
+      .single();
+    if (lookupError && lookupError.code !== "PGRST116") {
+      console.error("[cart/items/[id] DELETE] lookup error:", lookupError);
+      return apiError(500, lookupError.message);
+    }
 
-  await supabase.from("cart_items").delete().eq("id", id);
-  return ok(await fetchCartResponse(supabase, cartRecord.cart_id as string));
-}
+    const cartRecord = item as
+      | (Record<string, unknown> & { carts: { user_id: string }; cart_id: string })
+      | null;
+    if (!cartRecord || cartRecord.carts.user_id !== userId) {
+      return apiError(404, "cart item not found");
+    }
 
-export { noContent };
+    const { error: deleteError } = await supabase
+      .from("cart_items")
+      .delete()
+      .eq("id", id);
+    if (deleteError) {
+      console.error("[cart/items/[id] DELETE] delete error:", deleteError);
+      return apiError(500, deleteError.message);
+    }
+
+    return ok(await fetchCartResponse(supabase, cartRecord.cart_id));
+  },
+);

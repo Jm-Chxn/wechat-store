@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import {
   Bar,
   BarChart,
@@ -12,180 +13,225 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { useLanguage } from "@/i18n/LanguageProvider";
-import { computeStats, listOrders, type AdminStats } from "@/lib/repository";
+import { AdminStatCard, StatusPill } from "@/components/admin/AdminShell";
+import { adminApi, type AdminOrder, type AdminStatsPayload } from "@/lib/api/admin";
 import { categoryBySlug } from "@/data/categories";
-import { formatDate, formatPrice } from "@/lib/utils";
-import type { DictionaryKey } from "@/i18n/strings";
-import type { Order } from "@/types";
+import { formatPrice } from "@/lib/utils";
 
 export default function AdminDashboardPage() {
-  const { t, locale } = useLanguage();
-  const [stats, setStats] = React.useState<AdminStats | null>(null);
-  const [recent, setRecent] = React.useState<Order[]>([]);
+  const [stats, setStats] = React.useState<AdminStatsPayload | null>(null);
+  const [recent, setRecent] = React.useState<AdminOrder[]>([]);
+  const [error, setError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
-    void Promise.all([computeStats(), listOrders()]).then(([s, o]) => {
-      if (cancelled) return;
-      setStats(s);
-      setRecent(o.slice(0, 5));
-    });
-    return () => { cancelled = true; };
+    void (async () => {
+      try {
+        const [s, o] = await Promise.all([adminApi.stats(), adminApi.listOrders()]);
+        if (cancelled) return;
+        setStats(s);
+        setRecent(o.slice(0, 8));
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  if (!stats) {
-    return <div className="p-6 text-muted-foreground">{t("common.loading")}</div>;
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-900">
+        <div className="font-semibold">Failed to load dashboard data</div>
+        <div className="mt-1 font-mono text-xs">{error}</div>
+      </div>
+    );
   }
 
-  const topCat = stats.topCategorySlug
-    ? categoryBySlug(stats.topCategorySlug)
-    : null;
+  if (!stats) {
+    return (
+      <div className="space-y-3">
+        <div className="h-24 animate-pulse rounded-xl bg-slate-200/50" />
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200/50" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  const topCat = stats.topCategorySlug ? categoryBySlug(stats.topCategorySlug) : null;
 
   return (
-    <div className="space-y-6 p-4 md:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("admin.title")}</h1>
-        <p className="text-sm text-muted-foreground">{t("brand.tagline")}</p>
-      </div>
+    <div className="space-y-6">
+      <header className="flex items-end justify-between">
+        <div>
+          <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
+            Overview
+          </div>
+          <h1 className="mt-1 text-2xl font-semibold text-slate-900">
+            Welcome back, admin
+          </h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Today&apos;s pulse and the last seven days of operating signal.
+          </p>
+        </div>
+      </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label={t("admin.statTotalUsers")} value={String(stats.totalUsers)} />
-        <StatCard
-          label={t("admin.statTodayOrders")}
+        <AdminStatCard
+          label="Total customers"
+          value={String(stats.totalUsers)}
+          sub="profiles in Supabase"
+          accent="neutral"
+        />
+        <AdminStatCard
+          label="Orders today"
           value={String(stats.ordersToday)}
+          accent="primary"
         />
-        <StatCard
-          label={t("admin.statTodayRevenue")}
+        <AdminStatCard
+          label="Revenue today"
           value={formatPrice(stats.revenueTodayCents)}
-          accent
+          accent="success"
         />
-        <StatCard
-          label={t("admin.statTopCategory")}
-          value={
-            topCat
-              ? t(`category.${topCat.slug}` as DictionaryKey)
-              : "—"
-          }
+        <AdminStatCard
+          label="Top category"
+          value={topCat ? topCat.nameEn : "—"}
+          sub={topCat ? topCat.nameZh : undefined}
+          accent="neutral"
         />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("admin.recentOrders")}</CardTitle>
-            <CardDescription>Last 7 days</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={stats.ordersLast7d}>
-                  <CartesianGrid stroke="#eee" strokeDasharray="3 3" />
-                  <XAxis dataKey="date" stroke="#888" fontSize={12} />
-                  <YAxis stroke="#888" fontSize={12} />
-                  <Tooltip />
-                  <Line
-                    type="monotone"
-                    dataKey="orders"
-                    stroke="#D94F2B"
-                    strokeWidth={2.5}
-                    dot={{ r: 3, fill: "#D94F2B" }}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        <Panel title="Orders — last 7 days" subtitle="Daily count">
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={stats.ordersLast7d}>
+                <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
+                <XAxis dataKey="date" stroke="#64748B" fontSize={11} />
+                <YAxis stroke="#64748B" fontSize={11} />
+                <Tooltip
+                  contentStyle={{
+                    border: "1px solid #E2E8F0",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="orders"
+                  stroke="#0F172A"
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: "#0F172A" }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>{t("admin.revenueByCategory")}</CardTitle>
-            <CardDescription>Total ($)</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="h-56">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={stats.revenueByCategory.map((r) => ({
-                    name: t(`category.${r.categorySlug}` as DictionaryKey),
+        <Panel title="Revenue by category" subtitle="USD">
+          <div className="h-56">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={stats.revenueByCategory.map((r) => {
+                  const cat = categoryBySlug(r.categorySlug);
+                  return {
+                    name: cat?.nameEn ?? r.categorySlug,
                     revenue: Math.round(r.revenue / 100),
-                  }))}
-                >
-                  <CartesianGrid stroke="#eee" strokeDasharray="3 3" />
-                  <XAxis dataKey="name" stroke="#888" fontSize={11} interval={0} angle={-15} dy={10} height={50} />
-                  <YAxis stroke="#888" fontSize={12} />
-                  <Tooltip />
-                  <Bar dataKey="revenue" fill="#E8B14B" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+                  };
+                })}
+              >
+                <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="name"
+                  stroke="#64748B"
+                  fontSize={10}
+                  interval={0}
+                  angle={-20}
+                  textAnchor="end"
+                  height={60}
+                />
+                <YAxis stroke="#64748B" fontSize={11} />
+                <Tooltip
+                  contentStyle={{
+                    border: "1px solid #E2E8F0",
+                    borderRadius: 8,
+                    fontSize: 12,
+                  }}
+                />
+                <Bar dataKey="revenue" fill="#475569" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </Panel>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("admin.recentOrders")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {recent.length === 0 ? (
-            <p className="text-sm text-muted-foreground">{t("admin.empty")}</p>
-          ) : (
-            <ul className="divide-y divide-border">
-              {recent.map((o) => (
-                <li
-                  key={o.id}
-                  className="flex flex-wrap items-center gap-3 py-3 text-sm"
-                >
-                  <div className="font-medium">{o.id}</div>
-                  <div className="text-muted-foreground">
-                    {formatDate(o.createdAt, locale)}
-                  </div>
-                  <Badge variant="secondary" className="ml-auto">
-                    {t(`order.status.${o.status}` as const)}
-                  </Badge>
-                  <div className="font-semibold">{formatPrice(o.total)}</div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <Panel
+        title="Latest orders"
+        subtitle={`${recent.length} most recent`}
+        action={
+          <Link
+            href="/admin/orders"
+            className="text-xs font-medium text-slate-600 hover:text-slate-900"
+          >
+            View all →
+          </Link>
+        }
+      >
+        {recent.length === 0 ? (
+          <div className="py-6 text-center text-sm text-slate-500">No orders yet.</div>
+        ) : (
+          <ul className="divide-y divide-slate-100">
+            {recent.map((o) => (
+              <li
+                key={o.id}
+                className="flex flex-wrap items-center gap-3 py-3 text-sm"
+              >
+                <code className="font-mono text-[11px] text-slate-500">{o.id}</code>
+                <span className="font-medium text-slate-900">
+                  {o.customerName ?? o.guestName ?? "Guest"}
+                </span>
+                <span className="text-slate-500">·</span>
+                <span className="text-slate-500">
+                  {o.items.length} item{o.items.length === 1 ? "" : "s"}
+                </span>
+                <span className="ml-auto font-semibold tabular-nums text-slate-900">
+                  {formatPrice(o.totalCents)}
+                </span>
+                <StatusPill status={o.status} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Panel>
     </div>
   );
 }
 
-function StatCard({
-  label,
-  value,
-  accent,
+function Panel({
+  title,
+  subtitle,
+  action,
+  children,
 }: {
-  label: string;
-  value: string;
-  accent?: boolean;
+  title: string;
+  subtitle?: string;
+  action?: React.ReactNode;
+  children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-border bg-surface p-5">
-      <div className="text-xs uppercase tracking-wide text-muted-foreground">
-        {label}
-      </div>
-      <div
-        className={
-          accent
-            ? "mt-1 text-2xl font-semibold text-primary"
-            : "mt-1 text-2xl font-semibold"
-        }
-      >
-        {value}
-      </div>
-    </div>
+    <section className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-slate-200">
+      <header className="mb-4 flex items-center justify-between">
+        <div>
+          <h2 className="text-sm font-semibold text-slate-900">{title}</h2>
+          {subtitle && <p className="text-xs text-slate-500">{subtitle}</p>}
+        </div>
+        {action}
+      </header>
+      {children}
+    </section>
   );
 }
