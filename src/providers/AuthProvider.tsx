@@ -55,19 +55,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUser(null);
       return;
     }
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("nickname, avatar_url, role")
-      .eq("user_id", sess.user.id)
-      .single();
+
     let role: Role = "user";
     let nickname: string | null = null;
     let avatarUrl: string | null = null;
-    if (!error && data) {
-      role = (data.role === "admin" ? "admin" : "user") as Role;
-      nickname = (data.nickname as string | null) ?? null;
-      avatarUrl = (data.avatar_url as string | null) ?? null;
+
+    try {
+      // Race the profile query against a 5-second timeout so a missing
+      // `profiles` table or a cold-starting Supabase project never blocks auth.
+      const timeoutPromise = new Promise<null>((resolve) =>
+        setTimeout(() => resolve(null), 5000),
+      );
+      const queryPromise = supabase
+        .from("profiles")
+        .select("nickname, avatar_url, role")
+        .eq("user_id", sess.user.id)
+        .single();
+
+      const result = await Promise.race([queryPromise, timeoutPromise]);
+
+      if (result === null) {
+        console.warn("[AuthProvider] Profile query timed out – using defaults.");
+      } else {
+        const { data, error } = result;
+        if (error) {
+          console.warn("[AuthProvider] Profile query failed:", error.message);
+        } else if (data) {
+          role = (data.role === "admin" ? "admin" : "user") as Role;
+          nickname = (data.nickname as string | null) ?? null;
+          avatarUrl = (data.avatar_url as string | null) ?? null;
+        }
+      }
+    } catch (err) {
+      console.warn("[AuthProvider] Profile query threw:", err);
     }
+
     setUser({
       id: sess.user.id,
       email: sess.user.email ?? null,
