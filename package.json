@@ -9,7 +9,7 @@
     "lint": "next lint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "seed": "node -e \"console.log('hi from npm')\""
+    "seed": "node --env-file=.env.local --experimental-strip-types --no-warnings scripts/seed-supabase.mts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
