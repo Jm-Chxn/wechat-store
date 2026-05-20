@@ -13,6 +13,8 @@ import type { Product } from "@/types";
 export default function ShopPage() {
   const { t } = useLanguage();
   const [products, setProducts] = React.useState<Product[]>([]);
+  const [isProductsLoading, setIsProductsLoading] = React.useState(true);
+  const [isFilterLoading, setIsFilterLoading] = React.useState(false);
   const [filters, setFilters] = React.useState<Filters>({
     categorySlug: "all",
     priceMaxCents: 5000,
@@ -22,9 +24,29 @@ export default function ShopPage() {
 
   React.useEffect(() => {
     let cancelled = false;
-    void listProducts().then((p) => { if (!cancelled) setProducts(p); });
-    return () => { cancelled = true; };
+    setIsProductsLoading(true);
+    void listProducts()
+      .then((p) => {
+        if (!cancelled) setProducts(p);
+      })
+      .finally(() => {
+        if (!cancelled) setIsProductsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
   }, []);
+
+  React.useEffect(() => {
+    if (isProductsLoading) return;
+    setIsFilterLoading(true);
+    const timer = window.setTimeout(() => {
+      setIsFilterLoading(false);
+    }, 180);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [filters, sort, isProductsLoading]);
 
   const filtered = React.useMemo(() => {
     let list = products.slice();
@@ -54,14 +76,16 @@ export default function ShopPage() {
         <div>
           <h1 className="text-3xl font-semibold">{t("shop.title")}</h1>
           <p className="text-sm text-muted-foreground">
-            {t("shop.resultsCount", { n: filtered.length })}
+            {t("shop.resultsCount", {
+              n: isProductsLoading || isFilterLoading ? 0 : filtered.length,
+            })}
           </p>
         </div>
         <SortSelect value={sort} onChange={setSort} />
       </div>
       <div className="grid gap-6 md:grid-cols-[260px,1fr]">
         <FilterSidebar filters={filters} onChange={setFilters} />
-        <ProductGrid products={filtered} />
+        <ProductGrid products={filtered} isLoading={isProductsLoading || isFilterLoading} />
       </div>
     </div>
   );

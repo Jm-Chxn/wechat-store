@@ -46,6 +46,7 @@ function deriveName(rawUser: User, profileNickname: string | null): string {
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [session, setSession] = React.useState<Session | null>(null);
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isReady, setReady] = React.useState(false);
@@ -97,16 +98,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     let isMounted = true;
-    void supabase.auth.getSession().then(({ data }) => {
-      if (!isMounted) return;
-      setSession(data.session);
-      void refreshProfile(data.session).finally(() => {
+    void supabase.auth
+      .getSession()
+      .then(async ({ data }) => {
+        if (!isMounted) return;
+        setSession(data.session);
+        await refreshProfile(data.session);
+      })
+      .catch(() => {
+        if (!isMounted) return;
+        setSession(null);
+        setUser(null);
+      })
+      .finally(() => {
         if (isMounted) setReady(true);
       });
-    });
     const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
       setSession(sess);
-      await refreshProfile(sess);
+      try {
+        await refreshProfile(sess);
+      } catch {
+        setUser(null);
+      } finally {
+        setReady(true);
+      }
     });
     return () => {
       isMounted = false;
@@ -115,29 +130,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [refreshProfile]);
 
   const signInWithPassword = React.useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to sign in.";
+      return { error: message };
+    }
   }, []);
 
   const signUpWithPassword = React.useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    return { error: error?.message ?? null };
+    try {
+      const { error } = await supabase.auth.signUp({ email, password });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to create account.";
+      return { error: message };
+    }
   }, []);
 
   const signInWithGoogle = React.useCallback(async (returnTo?: string) => {
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
-    const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${origin}/auth/callback${target}` },
-    });
-    return { error: error?.message ?? null };
+    try {
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+      const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: { redirectTo: `${origin}/auth/callback${target}` },
+      });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to sign in with Google.";
+      return { error: message };
+    }
   }, []);
 
   const signOut = React.useCallback(async () => {
-    await supabase.auth.signOut();
-  }, []);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Ignore sign-out failures so UI can still clear client state via auth listener.
+    } finally {
+      router.refresh();
+    }
+  }, [router]);
 
   const value = React.useMemo<AuthContextValue>(
     () => ({

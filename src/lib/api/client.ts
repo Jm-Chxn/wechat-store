@@ -7,6 +7,8 @@ import { createClient } from "@/utils/supabase/client";
 const BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/+$/, "") ?? "";
 
+export const BACKEND_ENABLED = Boolean(process.env.NEXT_PUBLIC_API_BASE_URL);
+
 export class ApiError extends Error {
   status: number;
   constructor(message: string, status: number) {
@@ -41,7 +43,14 @@ export async function apiFetch<T>(
     headers["Content-Type"] = "application/json";
     requestInit.body = JSON.stringify(init.json);
   }
-  const res = await fetch(`${BASE_URL}${path}`, requestInit);
+  const controller = new AbortController();
+  const timeoutMs = 2500;
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+  const res = await fetch(`${BASE_URL}${path}`, { ...requestInit, signal: controller.signal }).finally(
+    () => {
+      clearTimeout(timeout);
+    },
+  );
   if (res.status === 204) return undefined as unknown as T;
   const text = await res.text();
   let body: unknown;

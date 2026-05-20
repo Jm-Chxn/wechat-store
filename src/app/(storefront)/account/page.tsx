@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
+import { Heart, Loader2, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -17,10 +17,14 @@ export default function AccountPage() {
   const { user, isReady, signOut } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = React.useState<Order[]>([]);
+  const signingOutRef = React.useRef(false);
+  const signOutInFlightRef = React.useRef(false);
+  const [signingOut, setSigningOut] = React.useState(false);
 
   React.useEffect(() => {
     if (!isReady) return;
     if (!user) {
+      if (signingOutRef.current) return;
       router.replace("/account/login");
       return;
     }
@@ -28,6 +32,21 @@ export default function AccountPage() {
     void listOrders(user.id).then((o) => { if (!cancelled) setOrders(o); });
     return () => { cancelled = true; };
   }, [isReady, user, router]);
+
+  const handleSignOut = React.useCallback(async () => {
+    if (signOutInFlightRef.current) return;
+    signOutInFlightRef.current = true;
+    signingOutRef.current = true;
+    setSigningOut(true);
+    try {
+      await signOut();
+      router.replace("/");
+    } catch {
+      signingOutRef.current = false;
+      signOutInFlightRef.current = false;
+      setSigningOut(false);
+    }
+  }, [signOut, router]);
 
   if (!isReady || !user) {
     return (
@@ -94,11 +113,16 @@ export default function AccountPage() {
             <Button
               variant="ghost"
               className="justify-start text-destructive hover:bg-destructive/10"
+              disabled={signingOut}
               onClick={() => {
-                void signOut().then(() => router.push("/"));
+                void handleSignOut();
               }}
             >
-              <LogOut className="h-4 w-4" />
+              {signingOut ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <LogOut className="h-4 w-4" />
+              )}
               {t("account.signOut")}
             </Button>
           </div>
