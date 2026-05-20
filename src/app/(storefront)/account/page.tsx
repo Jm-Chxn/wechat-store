@@ -6,6 +6,14 @@ import { useRouter } from "next/navigation";
 import { Heart, Loader2, LogOut, ReceiptText, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { OrderStatusBadge } from "@/components/storefront/OrderStatusBadge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { OrderDetailCard } from "@/components/storefront/OrderDetailCard";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { listOrders } from "@/lib/repository";
@@ -17,6 +25,7 @@ export default function AccountPage() {
   const { user, isReady, signOut } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = React.useState<Order[]>([]);
+  const [selectedOrder, setSelectedOrder] = React.useState<Order | null>(null);
   const signingOutRef = React.useRef(false);
   const signOutInFlightRef = React.useRef(false);
   const [signingOut, setSigningOut] = React.useState(false);
@@ -29,8 +38,12 @@ export default function AccountPage() {
       return;
     }
     let cancelled = false;
-    void listOrders(user.id).then((o) => { if (!cancelled) setOrders(o); });
-    return () => { cancelled = true; };
+    void listOrders(user.id).then((o) => {
+      if (!cancelled) setOrders(o);
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [isReady, user, router]);
 
   const handleSignOut = React.useCallback(async () => {
@@ -48,6 +61,11 @@ export default function AccountPage() {
     }
   }, [signOut, router]);
 
+  const onOrderUpdated = React.useCallback((updated: Order) => {
+    setOrders((cur) => cur.map((o) => (o.id === updated.id ? updated : o)));
+    setSelectedOrder(updated);
+  }, []);
+
   if (!isReady || !user) {
     return (
       <div className="container py-16 text-center text-muted-foreground">
@@ -55,6 +73,8 @@ export default function AccountPage() {
       </div>
     );
   }
+
+  const displayName = user.fullName || user.name;
 
   return (
     <div className="container py-8">
@@ -66,23 +86,46 @@ export default function AccountPage() {
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={user.avatarUrl}
-                alt={user.name}
+                alt={displayName}
                 className="h-14 w-14 rounded-full bg-secondary object-cover"
               />
             ) : (
               <div className="grid h-14 w-14 place-items-center rounded-full bg-secondary text-xl font-semibold">
-                {user.name.charAt(0).toUpperCase()}
+                {displayName.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <div className="font-semibold leading-tight">{user.name}</div>
-              <div className="text-xs text-muted-foreground">{user.email}</div>
+              <div className="font-semibold leading-tight">{displayName}</div>
             </div>
           </div>
           <div className="space-y-1.5 text-xs text-muted-foreground">
-            <div className="flex justify-between">
+            {user.fullName && (
+              <div className="flex justify-between gap-2">
+                <span>{t("account.fullName")}</span>
+                <span className="text-right text-foreground">{user.fullName}</span>
+              </div>
+            )}
+            {user.email && (
+              <div className="flex justify-between gap-2">
+                <span>Email</span>
+                <span className="truncate text-right text-foreground">{user.email}</span>
+              </div>
+            )}
+            {user.wechatId && (
+              <div className="flex justify-between gap-2">
+                <span>{t("account.wechatId")}</span>
+                <span className="text-right text-foreground">{user.wechatId}</span>
+              </div>
+            )}
+            {user.phone && (
+              <div className="flex justify-between gap-2">
+                <span>{t("account.phone")}</span>
+                <span className="text-right text-foreground">{user.phone}</span>
+              </div>
+            )}
+            <div className="flex justify-between gap-2">
               <span>{t("account.openid")}</span>
-              <span className="font-mono">{user.id.slice(0, 8)}…</span>
+              <span className="font-mono text-foreground">{user.id.slice(0, 8)}…</span>
             </div>
             <div className="flex items-center justify-between">
               <span>{t("account.role")}</span>
@@ -130,7 +173,7 @@ export default function AccountPage() {
 
         <section className="space-y-4 rounded-2xl border border-border bg-surface p-5">
           <h2 className="text-lg font-semibold">
-            {t("account.welcome", { name: user.name })}
+            {t("account.welcome", { name: displayName })}
           </h2>
           <p className="text-sm text-muted-foreground">{t("brand.tagline")}</p>
           {orders.length === 0 ? (
@@ -143,26 +186,48 @@ export default function AccountPage() {
           ) : (
             <ul className="space-y-3">
               {orders.slice(0, 3).map((o) => (
-                <li
-                  key={o.id}
-                  className="flex flex-wrap items-center gap-3 rounded-xl border border-border p-3"
-                >
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">{o.id}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {formatDate(o.createdAt, locale)} · {o.items.length} items
+                <li key={o.id}>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedOrder(o)}
+                    className="flex w-full flex-wrap items-center gap-3 rounded-xl border border-border p-3 text-left transition-colors hover:bg-secondary/40"
+                  >
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">
+                        {t("order.id")} {o.id}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {formatDate(o.createdAt, locale)} · {o.items.length} items
+                      </div>
                     </div>
-                  </div>
-                  <Badge variant="secondary">
-                    {t(`order.status.${o.status}` as const)}
-                  </Badge>
-                  <div className="font-semibold">{formatPrice(o.total)}</div>
+                    <OrderStatusBadge
+                      status={o.status}
+                      label={t(`order.status.${o.status}` as const)}
+                    />
+                    <div className="font-semibold">{formatPrice(o.total)}</div>
+                  </button>
                 </li>
               ))}
             </ul>
           )}
         </section>
       </div>
+
+      <Dialog open={selectedOrder !== null} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+        <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("account.myOrders")}</DialogTitle>
+          </DialogHeader>
+          {selectedOrder && (
+            <OrderDetailCard
+              order={selectedOrder}
+              locale={locale}
+              t={t}
+              onOrderUpdated={onOrderUpdated}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

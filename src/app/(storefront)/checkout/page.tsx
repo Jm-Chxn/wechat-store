@@ -14,6 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { CheckoutSkeleton } from "@/components/storefront/CheckoutSkeleton";
+import { OrderConfirmedSkeleton } from "@/components/storefront/OrderConfirmedSkeleton";
+import { Loader2 } from "lucide-react";
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/providers/AuthProvider";
@@ -49,7 +51,7 @@ function RequiredMark() {
 
 export default function CheckoutPage() {
   const { t, locale } = useLanguage();
-  const { user, isReady } = useAuth();
+  const { user, isReady, updateProfile } = useAuth();
   const { lines, clear, isReady: cartReady } = useCart();
   const router = useRouter();
 
@@ -57,9 +59,10 @@ export default function CheckoutPage() {
   const [productsLoading, setProductsLoading] = React.useState(false);
   const [name, setName] = React.useState("");
   const [phone, setPhone] = React.useState("");
-  const [community, setCommunity] = React.useState<"maple" | "cedar" | "river">(
-    "maple",
-  );
+  const [wechatId, setWechatId] = React.useState("");
+  const [community, setCommunity] = React.useState<
+    "maple" | "cedar" | "river" | "none"
+  >("maple");
   const [address, setAddress] = React.useState({
     line1: "",
     line2: "",
@@ -97,9 +100,10 @@ export default function CheckoutPage() {
   }, [productIdsKey]);
 
   React.useEffect(() => {
-    if (user) {
-      setName((n) => n || user.name);
-    }
+    if (!user) return;
+    setName((n) => n || user.fullName || user.name);
+    setPhone((p) => p || user.phone || "");
+    setWechatId((w) => w || user.wechatId || "");
   }, [user]);
 
   const detailed = lines
@@ -119,6 +123,14 @@ export default function CheckoutPage() {
     cedar: { en: t("checkout.communityCedar"), zh: "雪松巷" },
     river: { en: t("checkout.communityRiver"), zh: "河滨苑" },
   } as const;
+
+  React.useEffect(() => {
+    if (qualifiesForDelivery) {
+      setCommunity("none");
+    } else {
+      setCommunity((c) => (c === "none" ? "maple" : c));
+    }
+  }, [qualifiesForDelivery]);
 
   const isPageLoading =
     !isReady ||
@@ -144,29 +156,52 @@ export default function CheckoutPage() {
         return;
       }
     }
+    if (!name.trim() || !phone.trim() || !wechatId.trim()) {
+      return;
+    }
     setSubmitting(true);
     setOrderError(null);
     try {
+      const profileResult = await updateProfile({
+        fullName: name.trim(),
+        wechatId: wechatId.trim(),
+        phone: phone.trim(),
+      });
+      if (profileResult.error) {
+        setOrderError(profileResult.error);
+        setSubmitting(false);
+        return;
+      }
+      const pickup =
+        qualifiesForDelivery
+          ? { en: "None", zh: "无" }
+          : community === "none"
+            ? communityMap.maple
+            : communityMap[community];
       const order = await placeOrder({
         userOpenid: user.id,
+        guestName: name.trim() || undefined,
         items: detailed.map((d) => ({ productId: d.productId, quantity: d.quantity })),
-        pickupCommunityEn: communityMap[community].en,
-        pickupCommunityZh: communityMap[community].zh,
+        pickupCommunityEn: pickup.en,
+        pickupCommunityZh: pickup.zh,
+        ...(qualifiesForDelivery
+          ? {
+              deliveryAddress: {
+                line1: address.line1.trim(),
+                line2: address.line2.trim() || undefined,
+                city: address.city,
+                postalCode: address.postalCode.trim(),
+              },
+            }
+          : {}),
       });
       logActivity("PLACE_ORDER", user.id, {
         orderId: order.id,
         total: order.total,
         items: order.items.length,
-        ...(qualifiesForDelivery
-          ? {
-              deliveryAddress: {
-                line1: address.line1,
-                line2: address.line2 || undefined,
-                city: address.city,
-                postalCode: address.postalCode,
-              },
-            }
-          : {}),
+        contactName: name,
+        contactPhone: phone,
+        wechatId,
       });
       clear();
       router.replace(`/order/confirmed/${order.id}`);
@@ -176,6 +211,20 @@ export default function CheckoutPage() {
       setSubmitting(false);
     }
   };
+
+  if (submitting) {
+    return (
+      <div className="relative">
+        <OrderConfirmedSkeleton />
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/60">
+          <div className="flex items-center gap-2 rounded-full bg-surface px-4 py-2 text-sm font-medium shadow-soft">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            {t("order.placingOrder")}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (isPageLoading) {
     return <CheckoutSkeleton />;
@@ -250,6 +299,8 @@ export default function CheckoutPage() {
                 <Input
                   id="ck-name"
                   required
+                  autoComplete="name"
+                  placeholder="Jane Doe"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -268,28 +319,48 @@ export default function CheckoutPage() {
                   onChange={(e) => setPhone(e.target.value)}
                 />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ck-wechat">
+                  {t("checkout.contactWechat")}
+                  <RequiredMark />
+                </Label>
+                <Input
+                  id="ck-wechat"
+                  required
+                  placeholder="wxid_example"
+                  value={wechatId}
+                  onChange={(e) => setWechatId(e.target.value)}
+                />
+              </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label>
                   {t("checkout.pickupCommunity")}
-                  <RequiredMark />
+                  {!qualifiesForDelivery && <RequiredMark />}
                 </Label>
                 <Select
                   value={community}
+                  disabled={qualifiesForDelivery}
                   onValueChange={(v) => setCommunity(v as typeof community)}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="maple">
-                      {communityMap.maple.en} / {communityMap.maple.zh}
-                    </SelectItem>
-                    <SelectItem value="cedar">
-                      {communityMap.cedar.en} / {communityMap.cedar.zh}
-                    </SelectItem>
-                    <SelectItem value="river">
-                      {communityMap.river.en} / {communityMap.river.zh}
-                    </SelectItem>
+                    {qualifiesForDelivery ? (
+                      <SelectItem value="none">None / 无</SelectItem>
+                    ) : (
+                      <>
+                        <SelectItem value="maple">
+                          {communityMap.maple.en} / {communityMap.maple.zh}
+                        </SelectItem>
+                        <SelectItem value="cedar">
+                          {communityMap.cedar.en} / {communityMap.cedar.zh}
+                        </SelectItem>
+                        <SelectItem value="river">
+                          {communityMap.river.en} / {communityMap.river.zh}
+                        </SelectItem>
+                      </>
+                    )}
                   </SelectContent>
                 </Select>
                 <p className="pt-5 text-xs text-muted-foreground">{t("checkout.deliveryNote")}</p>

@@ -46,6 +46,13 @@ interface BackendOrderItem {
   quantity: number;
 }
 
+interface BackendDeliveryAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  postalCode: string;
+}
+
 interface BackendOrder {
   id: string;
   userId: string | null;
@@ -56,6 +63,7 @@ interface BackendOrder {
   status: OrderStatus;
   pickupCommunityEn: string | null;
   pickupCommunityZh: string | null;
+  deliveryAddress?: BackendDeliveryAddress | null;
   createdAt: string | null;
   items: BackendOrderItem[];
 }
@@ -132,6 +140,7 @@ function fromBackendOrder(o: BackendOrder): Order {
     createdAt: o.createdAt ?? new Date().toISOString(),
     pickupCommunityEn: o.pickupCommunityEn ?? "",
     pickupCommunityZh: o.pickupCommunityZh ?? "",
+    deliveryAddress: o.deliveryAddress ?? null,
   };
 }
 
@@ -267,6 +276,12 @@ export interface PlaceOrderInput {
   items: { productId: string; quantity: number }[];
   pickupCommunityEn: string;
   pickupCommunityZh: string;
+  deliveryAddress?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    postalCode: string;
+  };
 }
 
 export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
@@ -275,8 +290,20 @@ export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
     pickupCommunityEn: input.pickupCommunityEn,
     pickupCommunityZh: input.pickupCommunityZh,
     guestName: input.guestName,
+    deliveryAddress: input.deliveryAddress,
   });
   return fromBackendOrder(order);
+}
+
+export async function cancelOrder(orderId: string): Promise<Order | undefined> {
+  try {
+    const o = await api.patch<BackendOrder>(`/api/v1/orders/${encodeURIComponent(orderId)}`, {
+      status: "CANCELLED",
+    });
+    return fromBackendOrder(o);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order | undefined> {

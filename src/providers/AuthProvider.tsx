@@ -2,21 +2,41 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import type { Session, User } from "@supabase/supabase-js";
+import type { Session } from "@supabase/supabase-js";
 import { createClient } from "@/utils/supabase/client";
 import type { Role } from "@/types";
 
-/**
- * Auth provider backed by Supabase. Subscribes to `onAuthStateChange` so React
- * always reflects the latest session, and joins to `profiles.role` for admin
- * gating.
- */
 export interface AuthUser {
   id: string;
   email: string | null;
   name: string;
+  fullName: string | null;
+  wechatId: string | null;
+  phone: string | null;
   avatarUrl: string | null;
   role: Role;
+}
+
+export interface SignUpInput {
+  email: string;
+  password: string;
+  fullName: string;
+}
+
+export interface UpdateProfileInput {
+  fullName?: string;
+  wechatId?: string;
+  phone?: string;
+}
+
+interface MeResponse {
+  role: string;
+  nickname: string | null;
+  avatarUrl: string | null;
+  fullName: string | null;
+  wechatId: string | null;
+  email: string | null;
+  phone: string | null;
 }
 
 interface AuthContextValue {
@@ -26,7 +46,8 @@ interface AuthContextValue {
   role: Role | null;
   isAdmin: boolean;
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
-  signUpWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUpWithPassword: (input: SignUpInput) => Promise<{ error: string | null }>;
+  updateProfile: (input: UpdateProfileInput) => Promise<{ error: string | null }>;
   signInWithGoogle: (returnTo?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -35,14 +56,20 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(undefined)
 
 const supabase = createClient();
 
-function deriveName(rawUser: User, profileNickname: string | null): string {
-  if (profileNickname) return profileNickname;
-  const meta = rawUser.user_metadata as Record<string, unknown> | undefined;
-  if (meta && typeof meta.name === "string" && meta.name.length > 0) {
-    return meta.name;
-  }
-  if (rawUser.email) return rawUser.email.split("@")[0];
-  return "Member";
+function mapMeToUser(sess: Session, me: MeResponse | null): AuthUser {
+  const fullName = me?.fullName ?? null;
+  const displayName =
+    fullName || me?.nickname || sess.user.email?.split("@")[0] || "Member";
+  return {
+    id: sess.user.id,
+    email: me?.email ?? sess.user.email ?? null,
+    name: displayName,
+    fullName,
+    wechatId: me?.wechatId ?? null,
+    phone: me?.phone ?? null,
+    avatarUrl: me?.avatarUrl ?? null,
+    role: (me?.role === "admin" ? "admin" : "user") as Role,
+  };
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -57,18 +84,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    let role: Role = "user";
-    let nickname: string | null = null;
-    let avatarUrl: string | null = null;
-
     try {
-      // Fetch profile via the /api/v1/me API route which uses the service-role
-      // key, bypassing any missing RLS SELECT policies on the profiles table.
-      // Race against a 10-second timeout to handle cold-starting Supabase projects.
       const token = sess.access_token;
       const fetchPromise = fetch("/api/v1/me", {
         headers: { Authorization: `Bearer ${token}` },
-      }).then((r) => (r.ok ? (r.json() as Promise<{ role: string; nickname: string | null; avatarUrl: string | null }>) : null));
+      }).then((r) => (r.ok ? (r.json() as Promise<MeResponse>) : null));
 
       const timeoutPromise = new Promise<null>((resolve) =>
         setTimeout(() => resolve(null), 10000),
@@ -78,22 +98,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (result === null) {
         console.warn("[AuthProvider] Profile fetch timed out – using defaults.");
+        setUser(mapMeToUser(sess, null));
       } else {
-        role = (result.role === "admin" ? "admin" : "user") as Role;
-        nickname = result.nickname ?? null;
-        avatarUrl = result.avatarUrl ?? null;
+        setUser(mapMeToUser(sess, result));
       }
     } catch (err) {
       console.warn("[AuthProvider] Profile fetch threw:", err);
+      setUser(mapMeToUser(sess, null));
     }
-
-    setUser({
-      id: sess.user.id,
-      email: sess.user.email ?? null,
-      name: deriveName(sess.user, nickname),
-      avatarUrl,
-      role,
-    });
   }, []);
 
   React.useEffect(() => {
@@ -139,10 +151,37 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const signUpWithPassword = React.useCallback(async (email: string, password: string) => {
+  const signUpWithPassword = React.useCallback(async (input: SignUpInput) => {
     try {
-      const { error } = await supabase.auth.signUp({ email, password });
-      return { error: error?.message ?? null };
+      const { data, error } = await supabase.auth.signUp({
+        email: input.email,
+        password: input.password,
+        options: {
+          data: { full_name: input.fullName },
+        },
+      });
+      if (error) return { error: error.message };
+
+      if (data.session) {
+        const res = await fetch("/api/v1/me", {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${data.session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ fullName: input.fullName }),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          const msg =
+            typeof body === "object" && body !== null && "message" in body
+              ? String((body as { message: unknown }).message)
+              : "Account created but profile could not be saved.";
+          return { error: msg };
+        }
+      }
+
+      return { error: null };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to create account.";
       return { error: message };
@@ -165,6 +204,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const updateProfile = React.useCallback(
+    async (input: UpdateProfileInput) => {
+      try {
+        let activeSession = session;
+        if (!activeSession) {
+          const { data } = await supabase.auth.getSession();
+          activeSession = data.session;
+        }
+        if (!activeSession) return { error: "Not signed in." };
+
+        const res = await fetch("/api/v1/me", {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${activeSession.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(input),
+        });
+        if (!res.ok) {
+          const body = await res.json().catch(() => ({}));
+          const msg =
+            typeof body === "object" && body !== null && "message" in body
+              ? String((body as { message: unknown }).message)
+              : "Could not save profile.";
+          return { error: msg };
+        }
+        await refreshProfile(activeSession);
+        return { error: null };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Could not save profile.";
+        return { error: message };
+      }
+    },
+    [session, refreshProfile],
+  );
+
   const signOut = React.useCallback(async () => {
     try {
       await supabase.auth.signOut();
@@ -184,10 +259,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isAdmin: user?.role === "admin",
       signInWithPassword,
       signUpWithPassword,
+      updateProfile,
       signInWithGoogle,
       signOut,
     }),
-    [user, session, isReady, signInWithPassword, signUpWithPassword, signInWithGoogle, signOut],
+    [
+      user,
+      session,
+      isReady,
+      signInWithPassword,
+      signUpWithPassword,
+      updateProfile,
+      signInWithGoogle,
+      signOut,
+    ],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -37,7 +37,7 @@ export const GET = withRoute("GET /api/v1/admin/orders", async (request: NextReq
     new Set(ordersList.map((o) => o.user_id).filter((v): v is string => !!v)),
   );
 
-  const nicknameByUser = await fetchNicknames(supabase, userIds);
+  const profilesByUser = await fetchCustomerProfiles(supabase, userIds);
   const authUsers = await fetchAuthUsersByIds(supabase, userIds);
 
   const result = await Promise.all(
@@ -51,11 +51,11 @@ export const GET = withRoute("GET /api/v1/admin/orders", async (request: NextReq
         (items ?? []) as Record<string, unknown>[],
       );
       const authUser = order.user_id ? authUsers.get(order.user_id) ?? null : null;
-      const nickname =
-        order.user_id ? nicknameByUser.get(order.user_id) ?? null : null;
+      const profile = order.user_id ? profilesByUser.get(order.user_id) ?? null : null;
       return {
         ...mapped,
-        customerName: nickname,
+        customerName: profile?.name ?? null,
+        customerWechatId: profile?.wechatId ?? null,
         customerEmail: authUser?.email ?? null,
         customerPhone: authUser?.phone ?? null,
       };
@@ -65,31 +65,43 @@ export const GET = withRoute("GET /api/v1/admin/orders", async (request: NextReq
   return ok(result);
 });
 
+interface CustomerProfile {
+  name: string | null;
+  wechatId: string | null;
+}
+
 /**
- * Best-effort lookup of `profiles.nickname` for each user id. Returns an
- * empty map (not a thrown error) if the query fails, so the orders list still
- * renders for the admin.
+ * Best-effort lookup of profile fields for each user id. Returns an empty map
+ * (not a thrown error) if the query fails, so the orders list still renders.
  */
-async function fetchNicknames(
+async function fetchCustomerProfiles(
   supabase: ReturnType<typeof createAdminClient>,
   userIds: string[],
-): Promise<Map<string, string | null>> {
-  const out = new Map<string, string | null>();
+): Promise<Map<string, CustomerProfile>> {
+  const out = new Map<string, CustomerProfile>();
   if (userIds.length === 0) return out;
   try {
     const { data, error } = await supabase
       .from("profiles")
-      .select("user_id, nickname")
+      .select("user_id, nickname, full_name, wechat_id")
       .in("user_id", userIds);
     if (error) {
-      console.warn("[admin/orders] profile nicknames failed:", error.message);
+      console.warn("[admin/orders] profile lookup failed:", error.message);
       return out;
     }
-    for (const row of (data ?? []) as Array<{ user_id: string; nickname: string | null }>) {
-      out.set(row.user_id, row.nickname);
+    for (const row of (data ?? []) as Array<{
+      user_id: string;
+      nickname: string | null;
+      full_name: string | null;
+      wechat_id: string | null;
+    }>) {
+      out.set(row.user_id, {
+        name: row.full_name ?? row.nickname,
+        wechatId: row.wechat_id,
+      });
     }
   } catch (err) {
-    console.warn("[admin/orders] profile nicknames threw:", err);
+    console.warn("[admin/orders] profile lookup threw:", err);
   }
   return out;
 }

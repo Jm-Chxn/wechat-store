@@ -48,7 +48,14 @@ export default function AdminUsersPage() {
     return users.filter((u) => {
       if (roleFilter !== "ALL" && u.role !== roleFilter) return false;
       if (!term) return true;
-      return [u.nickname ?? "", u.email ?? "", u.phone ?? "", u.userId]
+      return [
+        u.fullName ?? "",
+        u.nickname ?? "",
+        u.wechatId ?? "",
+        u.email ?? "",
+        u.phone ?? "",
+        u.userId,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(term);
@@ -103,7 +110,9 @@ export default function AdminUsersPage() {
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
         <table className="w-full table-fixed border-collapse text-sm">
           <colgroup>
-            <col className="w-72" />
+            <col className="w-56" />
+            <col className="w-36" />
+            <col className="w-36" />
             <col className="w-44" />
             <col className="w-44" />
             <col className="w-24" />
@@ -114,6 +123,7 @@ export default function AdminUsersPage() {
           <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-4 py-2.5">Customer</th>
+              <th className="px-4 py-2.5">WeChat</th>
               <th className="px-4 py-2.5">Email</th>
               <th className="px-4 py-2.5">Phone</th>
               <th className="px-4 py-2.5">Role</th>
@@ -125,14 +135,14 @@ export default function AdminUsersPage() {
           <tbody className="divide-y divide-slate-100">
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                   Loading…
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                   No customers match.
                 </td>
               </tr>
@@ -154,18 +164,21 @@ export default function AdminUsersPage() {
                       />
                     ) : (
                       <span className="grid h-8 w-8 place-items-center rounded-full bg-slate-200 text-xs font-semibold text-slate-700">
-                        {(u.nickname ?? u.email ?? "?").charAt(0).toUpperCase()}
+                        {(u.fullName ?? u.nickname ?? u.email ?? "?").charAt(0).toUpperCase()}
                       </span>
                     )}
                     <div className="min-w-0">
                       <div className="truncate text-sm font-medium text-slate-900">
-                        {u.nickname ?? u.email ?? "(no name)"}
+                        {u.fullName ?? u.nickname ?? u.email ?? "(no name)"}
                       </div>
                       <code className="block truncate font-mono text-[10px] text-slate-500">
                         {u.userId.slice(0, 8)}…
                       </code>
                     </div>
                   </div>
+                </td>
+                <td className="truncate px-4 py-3 text-xs text-slate-700">
+                  {u.wechatId ?? <span className="text-slate-400">—</span>}
                 </td>
                 <td className="truncate px-4 py-3 text-xs text-slate-700">
                   {u.email ?? <span className="text-slate-400">—</span>}
@@ -250,12 +263,12 @@ function UserDrawer({
               />
             ) : (
               <span className="grid h-10 w-10 place-items-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
-                {(user.nickname ?? user.email ?? "?").charAt(0).toUpperCase()}
+                {(user.fullName ?? user.nickname ?? user.email ?? "?").charAt(0).toUpperCase()}
               </span>
             )}
             <div>
               <div className="text-base font-semibold text-slate-900">
-                {user.nickname ?? user.email ?? "(no name)"}
+                {user.fullName ?? user.nickname ?? user.email ?? "(no name)"}
               </div>
               <code className="font-mono text-xs text-slate-500">{user.userId}</code>
             </div>
@@ -276,6 +289,18 @@ function UserDrawer({
               Contact
             </div>
             <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
+              {user.fullName && (
+                <li>
+                  <span className="text-slate-500">Full name: </span>
+                  {user.fullName}
+                </li>
+              )}
+              {user.wechatId && (
+                <li>
+                  <span className="text-slate-500">WeChat: </span>
+                  {user.wechatId}
+                </li>
+              )}
               <li className="flex items-center gap-1.5">
                 <Mail className="h-3 w-3 text-slate-400" />
                 {user.email ? (

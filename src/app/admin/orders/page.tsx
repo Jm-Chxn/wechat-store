@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Search, Filter, X, Phone, Mail, Calendar, Package } from "lucide-react";
+import { Search, Filter, X, Phone, Mail, Calendar, Package, MessageCircle } from "lucide-react";
 import { StatusPill } from "@/components/admin/AdminShell";
 import { adminApi, type AdminOrder } from "@/lib/api/admin";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -49,6 +49,7 @@ export default function AdminOrdersPage() {
       const haystack = [
         o.id,
         o.customerName ?? "",
+        o.customerWechatId ?? "",
         o.customerEmail ?? "",
         o.customerPhone ?? "",
         o.guestName ?? "",
@@ -177,6 +178,9 @@ export default function AdminOrdersPage() {
                     {o.customerEmail && (
                       <div className="text-xs text-slate-500">{o.customerEmail}</div>
                     )}
+                    {o.customerWechatId && (
+                      <div className="text-xs text-slate-500">WeChat: {o.customerWechatId}</div>
+                    )}
                   </td>
                   <td className="px-4 py-3 align-top">
                     {o.customerPhone ? (
@@ -295,6 +299,12 @@ function OrderDrawer({
                   </a>
                 </li>
               )}
+              {order.customerWechatId && (
+                <li className="flex items-center gap-1.5">
+                  <MessageCircle className="h-3 w-3" />
+                  <span>WeChat: {order.customerWechatId}</span>
+                </li>
+              )}
               {order.createdAt && (
                 <li className="flex items-center gap-1.5">
                   <Calendar className="h-3 w-3" />
@@ -361,6 +371,32 @@ function OrderDrawer({
               ))}
             </ul>
           </section>
+
+          {(order.deliveryAddress?.line1 ? (
+            <section className="rounded-xl bg-slate-50 p-4 text-sm">
+              <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Delivery address
+              </div>
+              <p className="mt-1 text-slate-900">
+                {order.deliveryAddress.line1}
+                {order.deliveryAddress.line2 ? `, ${order.deliveryAddress.line2}` : ""}
+                <br />
+                {order.deliveryAddress.city}, {order.deliveryAddress.postalCode}
+              </p>
+            </section>
+          ) : (
+            order.pickupCommunityEn && (
+              <section className="rounded-xl bg-slate-50 p-4 text-sm">
+                <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  Pickup
+                </div>
+                <p className="mt-1 text-slate-900">
+                  {order.pickupCommunityEn}
+                  {order.pickupCommunityZh ? ` / ${order.pickupCommunityZh}` : ""}
+                </p>
+              </section>
+            )
+          ))}
 
           <section className="space-y-1 rounded-xl bg-slate-50 p-4 text-sm">
             <Row label="Subtotal" value={formatPrice(order.subtotalCents)} />

@@ -14,14 +14,29 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/providers/AuthProvider";
 
-function buildSchema(t: (k: "common.invalidEmail" | "login.passwordTooShort") => string) {
+function RequiredMark() {
+  return <span className="text-primary"> *</span>;
+}
+
+function buildSignInSchema(t: (k: "common.invalidEmail" | "login.passwordTooShort") => string) {
   return z.object({
     email: z.string().email(t("common.invalidEmail")),
     password: z.string().min(6, t("login.passwordTooShort")),
   });
 }
 
-type FormValues = { email: string; password: string };
+function buildSignUpSchema(
+  t: (k: "common.invalidEmail" | "login.passwordTooShort") => string,
+) {
+  return z.object({
+    fullName: z.string().min(1, "Required"),
+    email: z.string().email(t("common.invalidEmail")),
+    password: z.string().min(6, t("login.passwordTooShort")),
+  });
+}
+
+type SignInValues = z.infer<ReturnType<typeof buildSignInSchema>>;
+type SignUpValues = z.infer<ReturnType<typeof buildSignUpSchema>>;
 
 export default function LoginPage() {
   return (
@@ -42,15 +57,16 @@ function LoginPageInner() {
   const [signUpError, setSignUpError] = React.useState<string | null>(null);
   const [signUpInfo, setSignUpInfo] = React.useState<string | null>(null);
 
-  const schema = React.useMemo(() => buildSchema(t), [t]);
+  const signInSchema = React.useMemo(() => buildSignInSchema(t), [t]);
+  const signUpSchema = React.useMemo(() => buildSignUpSchema(t), [t]);
 
-  const signInForm = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const signInForm = useForm<SignInValues>({
+    resolver: zodResolver(signInSchema),
     defaultValues: { email: "", password: "" },
   });
-  const signUpForm = useForm<FormValues>({
-    resolver: zodResolver(schema),
-    defaultValues: { email: "", password: "" },
+  const signUpForm = useForm<SignUpValues>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: { fullName: "", email: "", password: "" },
   });
 
   React.useEffect(() => {
@@ -66,7 +82,11 @@ function LoginPageInner() {
   const onSignUp = signUpForm.handleSubmit(async (values) => {
     setSignUpError(null);
     setSignUpInfo(null);
-    const { error } = await signUpWithPassword(values.email, values.password);
+    const { error } = await signUpWithPassword({
+      email: values.email,
+      password: values.password,
+      fullName: values.fullName.trim(),
+    });
     if (error) setSignUpError(error || t("login.signUpError"));
     else setSignUpInfo(t("login.checkEmail"));
   });
@@ -91,45 +111,36 @@ function LoginPageInner() {
 
           <TabsContent value="signin" className="space-y-3">
             <form noValidate onSubmit={onSignIn} className="space-y-3">
+              <p className="text-xs text-muted-foreground">{t("login.requiredNote")}</p>
               <div className="space-y-1.5">
-                <Label htmlFor="li-email">{t("login.email")}</Label>
+                <Label htmlFor="li-email">
+                  {t("login.email")}
+                  <RequiredMark />
+                </Label>
                 <Input
                   id="li-email"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@example.com"
-                  aria-invalid={!!signInForm.formState.errors.email}
+                  placeholder={t("login.emailPlaceholder")}
                   {...signInForm.register("email")}
                 />
-                {signInForm.formState.errors.email && (
-                  <p className="text-xs text-destructive" role="alert">
-                    {signInForm.formState.errors.email.message}
-                  </p>
-                )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="li-password">{t("login.password")}</Label>
+                <Label htmlFor="li-password">
+                  {t("login.password")}
+                  <RequiredMark />
+                </Label>
                 <Input
                   id="li-password"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="••••••••"
-                  aria-invalid={!!signInForm.formState.errors.password}
+                  placeholder={t("login.passwordPlaceholder")}
                   {...signInForm.register("password")}
                 />
-                {signInForm.formState.errors.password && (
-                  <p className="text-xs text-destructive" role="alert">
-                    {signInForm.formState.errors.password.message}
-                  </p>
-                )}
               </div>
-              {signInError && (
-                <p className="text-xs text-destructive" role="alert">{signInError}</p>
-              )}
+              {signInError && <p className="text-xs text-destructive" role="alert">{signInError}</p>}
               <Button type="submit" className="w-full" disabled={signInForm.formState.isSubmitting}>
-                {signInForm.formState.isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : null}
+                {signInForm.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {t("login.signInTab")}
               </Button>
             </form>
@@ -137,48 +148,49 @@ function LoginPageInner() {
 
           <TabsContent value="create" className="space-y-3">
             <form noValidate onSubmit={onSignUp} className="space-y-3">
+              <p className="text-xs text-muted-foreground">{t("login.requiredNote")}</p>
               <div className="space-y-1.5">
-                <Label htmlFor="ca-email">{t("login.email")}</Label>
+                <Label htmlFor="ca-fullName">
+                  {t("login.fullName")}
+                  <RequiredMark />
+                </Label>
+                <Input
+                  id="ca-fullName"
+                  autoComplete="name"
+                  placeholder={t("login.fullNamePlaceholder")}
+                  {...signUpForm.register("fullName")}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="ca-email">
+                  {t("login.email")}
+                  <RequiredMark />
+                </Label>
                 <Input
                   id="ca-email"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@example.com"
-                  aria-invalid={!!signUpForm.formState.errors.email}
+                  placeholder={t("login.emailPlaceholder")}
                   {...signUpForm.register("email")}
                 />
-                {signUpForm.formState.errors.email && (
-                  <p className="text-xs text-destructive" role="alert">
-                    {signUpForm.formState.errors.email.message}
-                  </p>
-                )}
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="ca-password">{t("login.password")}</Label>
+                <Label htmlFor="ca-password">
+                  {t("login.password")}
+                  <RequiredMark />
+                </Label>
                 <Input
                   id="ca-password"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="••••••••"
-                  aria-invalid={!!signUpForm.formState.errors.password}
+                  placeholder={t("login.passwordPlaceholder")}
                   {...signUpForm.register("password")}
                 />
-                {signUpForm.formState.errors.password && (
-                  <p className="text-xs text-destructive" role="alert">
-                    {signUpForm.formState.errors.password.message}
-                  </p>
-                )}
               </div>
-              {signUpError && (
-                <p className="text-xs text-destructive" role="alert">{signUpError}</p>
-              )}
-              {signUpInfo && (
-                <p className="text-xs text-emerald-700" role="status">{signUpInfo}</p>
-              )}
+              {signUpError && <p className="text-xs text-destructive" role="alert">{signUpError}</p>}
+              {signUpInfo && <p className="text-xs text-emerald-700" role="status">{signUpInfo}</p>}
               <Button type="submit" className="w-full" disabled={signUpForm.formState.isSubmitting}>
-                {signUpForm.formState.isSubmitting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : null}
+                {signUpForm.formState.isSubmitting ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
                 {t("login.createAccount")}
               </Button>
             </form>

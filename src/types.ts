@@ -77,6 +77,13 @@ export interface OrderItem {
   quantity: number;
 }
 
+export interface DeliveryAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  postalCode: string;
+}
+
 export interface Order {
   id: string;
   userOpenid: string | null;
@@ -92,6 +99,7 @@ export interface Order {
   createdAt: string; // ISO
   pickupCommunityEn: string;
   pickupCommunityZh: string;
+  deliveryAddress?: DeliveryAddress | null;
 }
 
 export type ActivityType =
