@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useAuth } from "@/providers/AuthProvider";
 import { logActivity, mergeGuestCart, fetchServerCart } from "@/lib/repository";
-import { api } from "@/lib/api/client";
+import { api, BACKEND_ENABLED } from "@/lib/api/client";
 import { readJSON, StorageKeys, writeJSON } from "@/lib/storage";
 import type { CartLine } from "@/types";
 
@@ -57,12 +57,20 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (synced === user.id) return;
     let cancelled = false;
     void (async () => {
+      if (!BACKEND_ENABLED) {
+        if (!cancelled) setSynced(user.id);
+        return;
+      }
       const guest = readJSON<CartLine[]>(StorageKeys.cart, []);
       const merged =
         guest.length > 0
           ? await mergeGuestCart(guest.map((l) => ({ productId: l.productId, quantity: l.quantity })))
           : await fetchServerCart();
-      if (cancelled || !merged) return;
+      if (cancelled) return;
+      if (!merged) {
+        setSynced(user.id);
+        return;
+      }
       const items = (merged.items ?? []) as ServerCartItem[];
       setLines(items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
       const ids = new Map<string, string>();
@@ -89,7 +97,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         : [...lines, { productId, quantity: qty }];
       persistLocal(next);
       logActivity("ADD_TO_CART", user?.id ?? null, { productId, qty });
-      if (user) {
+      if (user && BACKEND_ENABLED) {
         void api
           .post<{ items: ServerCartItem[] }>("/api/v1/cart/items", { productId, quantity: qty })
           .then((cart) => {
@@ -107,7 +115,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (productId: string) => {
       persistLocal(lines.filter((l) => l.productId !== productId));
       const id = serverIds.get(productId);
-      if (user && id) {
+      if (user && id && BACKEND_ENABLED) {
         void api.delete(`/api/v1/cart/items/${encodeURIComponent(id)}`).catch(() => {});
       }
     },
@@ -124,7 +132,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         lines.map((l) => (l.productId === productId ? { ...l, quantity: qty } : l)),
       );
       const id = serverIds.get(productId);
-      if (user && id) {
+      if (user && id && BACKEND_ENABLED) {
         void api.patch(`/api/v1/cart/items/${encodeURIComponent(id)}`, { quantity: qty }).catch(() => {});
       }
     },

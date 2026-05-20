@@ -6,7 +6,7 @@
 // promises.
 
 import { products as seedProducts } from "@/data/products";
-import { api } from "@/lib/api/client";
+import { api, BACKEND_ENABLED } from "@/lib/api/client";
 import type {
   Activity,
   ActivityType,
@@ -46,6 +46,13 @@ interface BackendOrderItem {
   quantity: number;
 }
 
+interface BackendDeliveryAddress {
+  line1: string;
+  line2?: string;
+  city: string;
+  postalCode: string;
+}
+
 interface BackendOrder {
   id: string;
   userId: string | null;
@@ -56,6 +63,7 @@ interface BackendOrder {
   status: OrderStatus;
   pickupCommunityEn: string | null;
   pickupCommunityZh: string | null;
+  deliveryAddress?: BackendDeliveryAddress | null;
   createdAt: string | null;
   items: BackendOrderItem[];
 }
@@ -132,6 +140,7 @@ function fromBackendOrder(o: BackendOrder): Order {
     createdAt: o.createdAt ?? new Date().toISOString(),
     pickupCommunityEn: o.pickupCommunityEn ?? "",
     pickupCommunityZh: o.pickupCommunityZh ?? "",
+    deliveryAddress: o.deliveryAddress ?? null,
   };
 }
 
@@ -178,11 +187,14 @@ export async function listProducts(): Promise<Product[]> {
 }
 
 export async function getProduct(slugOrId: string): Promise<Product | undefined> {
+  const local = seedProducts.find((p) => p.slug === slugOrId || p.id === slugOrId);
+  if (local) return local;
   try {
+    if (!BACKEND_ENABLED) return undefined;
     const p = await api.get<BackendProduct>(`/api/v1/products/${encodeURIComponent(slugOrId)}`);
     return fromBackendProduct(p);
   } catch {
-    return seedProducts.find((p) => p.slug === slugOrId || p.id === slugOrId);
+    return undefined;
   }
 }
 
@@ -264,6 +276,12 @@ export interface PlaceOrderInput {
   items: { productId: string; quantity: number }[];
   pickupCommunityEn: string;
   pickupCommunityZh: string;
+  deliveryAddress?: {
+    line1: string;
+    line2?: string;
+    city: string;
+    postalCode: string;
+  };
 }
 
 export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
@@ -272,8 +290,20 @@ export async function placeOrder(input: PlaceOrderInput): Promise<Order> {
     pickupCommunityEn: input.pickupCommunityEn,
     pickupCommunityZh: input.pickupCommunityZh,
     guestName: input.guestName,
+    deliveryAddress: input.deliveryAddress,
   });
   return fromBackendOrder(order);
+}
+
+export async function cancelOrder(orderId: string): Promise<Order | undefined> {
+  try {
+    const o = await api.patch<BackendOrder>(`/api/v1/orders/${encodeURIComponent(orderId)}`, {
+      status: "CANCELLED",
+    });
+    return fromBackendOrder(o);
+  } catch {
+    return undefined;
+  }
 }
 
 export async function updateOrderStatus(orderId: string, status: OrderStatus): Promise<Order | undefined> {
@@ -383,6 +413,7 @@ export interface BackendCart {
 
 export async function fetchServerCart(): Promise<BackendCart | null> {
   try {
+    if (!BACKEND_ENABLED) return null;
     return await api.get<BackendCart>("/api/v1/cart");
   } catch {
     return null;
@@ -391,6 +422,7 @@ export async function fetchServerCart(): Promise<BackendCart | null> {
 
 export async function mergeGuestCart(items: { productId: string; quantity: number }[]): Promise<BackendCart | null> {
   try {
+    if (!BACKEND_ENABLED) return null;
     return await api.post<BackendCart>("/api/v1/cart/merge", { items });
   } catch {
     return null;

@@ -22,6 +22,18 @@ export function mapProduct(row: Record<string, unknown>) {
   };
 }
 
+function parseDeliveryAddress(raw: unknown) {
+  if (!raw || typeof raw !== "object") return null;
+  const o = raw as Record<string, unknown>;
+  if (typeof o.line1 !== "string" || typeof o.city !== "string") return null;
+  return {
+    line1: o.line1,
+    line2: typeof o.line2 === "string" ? o.line2 : undefined,
+    city: String(o.city),
+    postalCode: typeof o.postalCode === "string" ? o.postalCode : String(o.postal_code ?? ""),
+  };
+}
+
 export function mapOrder(
   row: Record<string, unknown>,
   items: Record<string, unknown>[],
@@ -36,6 +48,7 @@ export function mapOrder(
     status: row.status,
     pickupCommunityEn: row.pickup_community_en ?? null,
     pickupCommunityZh: row.pickup_community_zh ?? null,
+    deliveryAddress: parseDeliveryAddress(row.delivery_address),
     createdAt: row.created_at ?? null,
     items: items.map((i) => ({
       productId: i.product_id,

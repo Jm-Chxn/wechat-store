@@ -9,6 +9,7 @@ export interface AdminOrder {
   userId: string | null;
   guestName: string | null;
   customerName: string | null;
+  customerWechatId: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
   subtotalCents: number;
@@ -17,6 +18,12 @@ export interface AdminOrder {
   status: "CONFIRMED" | "PROCESSING" | "COMPLETED" | "CANCELLED";
   pickupCommunityEn: string | null;
   pickupCommunityZh: string | null;
+  deliveryAddress: {
+    line1: string;
+    line2?: string;
+    city: string;
+    postalCode: string;
+  } | null;
   createdAt: string | null;
   items: {
     productId: string;
@@ -31,6 +38,8 @@ export interface AdminOrder {
 export interface AdminUser {
   userId: string;
   nickname: string | null;
+  fullName: string | null;
+  wechatId: string | null;
   avatarUrl: string | null;
   role: "user" | "admin";
   email: string | null;

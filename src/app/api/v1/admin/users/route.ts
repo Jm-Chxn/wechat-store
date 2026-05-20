@@ -7,6 +7,8 @@ import { withRoute } from "@/app/api/_lib/route-wrapper";
 interface ProfileRow {
   user_id: string;
   nickname: string | null;
+  full_name: string | null;
+  wechat_id: string | null;
   avatar_url: string | null;
   role: "user" | "admin";
   created_at: string | null;
@@ -33,7 +35,7 @@ export const GET = withRoute("GET /api/v1/admin/users", async (request: NextRequ
 
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
-    .select("user_id, nickname, avatar_url, role, created_at, last_seen_at")
+    .select("user_id, nickname, full_name, wechat_id, avatar_url, role, created_at, last_seen_at")
     .order("last_seen_at", { ascending: false, nullsFirst: false });
 
   if (profilesError) {
@@ -68,6 +70,8 @@ export const GET = withRoute("GET /api/v1/admin/users", async (request: NextRequ
     return {
       userId: profile.user_id,
       nickname: profile.nickname,
+      fullName: profile.full_name,
+      wechatId: profile.wechat_id,
       avatarUrl: profile.avatar_url,
       role: profile.role,
       email: auth?.email ?? null,
@@ -88,6 +92,8 @@ export const GET = withRoute("GET /api/v1/admin/users", async (request: NextRequ
     result.push({
       userId: id,
       nickname: null,
+      fullName: null,
+      wechatId: null,
       avatarUrl: null,
       role: "user",
       email: auth.email,

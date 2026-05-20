@@ -195,6 +195,16 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
     }
   }
 
+  const deliveryAddress =
+    body.deliveryAddress && typeof body.deliveryAddress === "object"
+      ? {
+          line1: String(body.deliveryAddress.line1 ?? ""),
+          line2: body.deliveryAddress.line2 ? String(body.deliveryAddress.line2) : null,
+          city: String(body.deliveryAddress.city ?? ""),
+          postalCode: String(body.deliveryAddress.postalCode ?? ""),
+        }
+      : null;
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert({
@@ -207,6 +217,7 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
       status: "CONFIRMED",
       pickup_community_en: body.pickupCommunityEn ?? null,
       pickup_community_zh: body.pickupCommunityZh ?? null,
+      delivery_address: deliveryAddress,
     })
     .select()
     .single();
