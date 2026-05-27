@@ -114,7 +114,7 @@ export default function CheckoutPage() {
     .filter((l): l is NonNullable<typeof l> => l !== null);
 
   const subtotal = detailed.reduce((s, l) => s + l.product.price * l.quantity, 0);
-  const deliveryFee = subtotal >= 5000 || subtotal === 0 ? 0 : 199;
+  const deliveryFee = subtotal >= DELIVERY_THRESHOLD_CENTS || subtotal === 0 ? 0 : 199;
   const total = subtotal + deliveryFee;
   const qualifiesForDelivery = subtotal >= DELIVERY_THRESHOLD_CENTS;
 
@@ -152,7 +152,7 @@ export default function CheckoutPage() {
     }
     if (detailed.length === 0) return;
     if (qualifiesForDelivery) {
-      if (!address.line1.trim() || !address.city || !address.postalCode.trim()) {
+      if (!address.line1.trim() || !address.city.trim() || !address.postalCode.trim()) {
         return;
       }
     }
@@ -364,6 +364,14 @@ export default function CheckoutPage() {
                   </SelectContent>
                 </Select>
                 <p className="pt-5 text-xs text-muted-foreground">{t("checkout.deliveryNote")}</p>
+                <p
+                  className="rounded-lg px-3 py-2 text-xs"
+                  style={{ background: "#EEF4FF", color: "#2C4A8C" }}
+                >
+                  {qualifiesForDelivery
+                    ? t("checkout.deliveryQualified")
+                    : t("checkout.deliveryNotQualified")}
+                </p>
               </div>
               </div>
         </section>
@@ -519,7 +527,7 @@ export default function CheckoutPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("cart.deliveryFee")}</span>
-              <span>{deliveryFee === 0 ? "Free / 免费" : formatPrice(deliveryFee)}</span>
+              <span>{deliveryFee === 0 ? t("checkout.deliveryFree") : formatPrice(deliveryFee)}</span>
             </div>
             <div className="flex justify-between text-base font-semibold">
               <span>{t("cart.total")}</span>

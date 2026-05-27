@@ -21,10 +21,20 @@ export const POST = withRoute("POST /api/v1/cart/merge", async (request: NextReq
   const cart = await getOrCreateCart(supabase, userId);
   if (!cart) return apiError(500, "failed to get cart");
 
+  const skippedItems: { productId: unknown; quantity: unknown; reason: string }[] = [];
+
   for (const guestItem of guestItems) {
-    if (!guestItem.productId || guestItem.quantity < 1) continue;
+    if (!guestItem.productId || guestItem.quantity < 1) {
+      skippedItems.push({
+        productId: guestItem.productId,
+        quantity: guestItem.quantity,
+        reason: !guestItem.productId ? "missing productId" : "quantity must be >= 1",
+      });
+      continue;
+    }
     await addOrIncrementCartItem(supabase, cart.id as string, guestItem.productId, guestItem.quantity);
   }
 
-  return ok(await fetchCartResponse(supabase, cart.id as string));
+  const merged = await fetchCartResponse(supabase, cart.id as string);
+  return ok({ ...merged, skipped: skippedItems });
 });

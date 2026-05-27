@@ -125,7 +125,13 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const setQuantity = React.useCallback(
     (productId: string, qty: number) => {
       if (qty <= 0) {
-        remove(productId);
+        // Inline the remove logic to avoid depending on the `remove` callback
+        // (which would create a circular / stale-closure dependency).
+        persistLocal(lines.filter((l) => l.productId !== productId));
+        const removeId = serverIds.get(productId);
+        if (user && removeId && BACKEND_ENABLED) {
+          void api.delete(`/api/v1/cart/items/${encodeURIComponent(removeId)}`).catch(() => {});
+        }
         return;
       }
       persistLocal(
@@ -136,7 +142,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         void api.patch(`/api/v1/cart/items/${encodeURIComponent(id)}`, { quantity: qty }).catch(() => {});
       }
     },
-    [lines, persistLocal, serverIds, user, remove],
+    [lines, persistLocal, serverIds, user],
   );
 
   const clear = React.useCallback(() => persistLocal([]), [persistLocal]);
