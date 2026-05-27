@@ -49,6 +49,7 @@ interface AuthContextValue {
   signUpWithPassword: (input: SignUpInput) => Promise<{ error: string | null }>;
   updateProfile: (input: UpdateProfileInput) => Promise<{ error: string | null }>;
   signInWithGoogle: (returnTo?: string) => Promise<{ error: string | null }>;
+  signInWithWeChat: (returnTo?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -204,6 +205,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  // NOTE: Supabase does not natively support WeChat as a built-in OAuth provider.
+  // The provider: 'wechat' call below will fail at runtime until WeChat is
+  // configured in the Supabase dashboard via a custom OAuth provider (or a
+  // third-party WeChat adapter). This code path is intentionally implemented
+  // now so that enabling the feature only requires Supabase/env config — no
+  // further code changes.
+  const signInWithWeChat = React.useCallback(async (returnTo?: string) => {
+    try {
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+      const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
+      const { error } = await supabase.auth.signInWithOAuth({
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        provider: "wechat" as any,
+        options: { redirectTo: `${origin}/auth/callback${target}` },
+      });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to sign in with WeChat.";
+      return { error: message };
+    }
+  }, []);
+
   const updateProfile = React.useCallback(
     async (input: UpdateProfileInput) => {
       try {
@@ -261,6 +285,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUpWithPassword,
       updateProfile,
       signInWithGoogle,
+      signInWithWeChat,
       signOut,
     }),
     [
@@ -271,6 +296,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       signUpWithPassword,
       updateProfile,
       signInWithGoogle,
+      signInWithWeChat,
       signOut,
     ],
   );

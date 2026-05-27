@@ -215,6 +215,8 @@ export const dictionary = {
   },
   "login.continueWithGoogle": { en: "Continue with Google", zh: "使用 Google 登录" },
   "login.signInWithWeChat": { en: "Sign in with WeChat", zh: "微信登录" },
+  "login.continueWithWeChat": { en: "Continue with WeChat", zh: "微信登录" },
+  "login.wechatComingSoon": { en: "WeChat login coming soon", zh: "微信登录即将上线" },
   "login.continueAsGuest": { en: "Continue as Guest", zh: "以访客身份继续" },
   "login.createAccount": { en: "Create Account", zh: "创建账户" },
   "login.or": { en: "or", zh: "或" },
