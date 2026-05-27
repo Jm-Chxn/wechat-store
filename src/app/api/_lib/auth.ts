@@ -32,9 +32,17 @@ export async function getAuthUser(request: Request): Promise<AuthUser | null> {
     .select("role")
     .eq("user_id", data.user.id)
     .single();
+
+  // PGRST116 = "no row found" — this is expected for new users who don't have
+  // a profile row yet, so we safely default their role to "user".
+  // Any other error is a real DB failure: do NOT silently default the role,
+  // as that would demote admins on a flaky query. Throw so the request fails
+  // with a 500 instead of proceeding with incorrect permissions.
   if (profileError && profileError.code !== "PGRST116") {
-    console.warn("[auth] profile lookup failed:", profileError.message);
+    console.error("[auth] profile lookup failed:", profileError.message);
+    throw new Error(`Profile lookup failed: ${profileError.message}`);
   }
+
   return {
     userId: data.user.id,
     role: (profile?.role as "user" | "admin") ?? "user",
