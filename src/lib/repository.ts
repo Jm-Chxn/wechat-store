@@ -254,12 +254,8 @@ export async function getUser(id: string | null | undefined): Promise<WeChatAcco
 
 export async function listOrders(userId?: string | null): Promise<Order[]> {
   const path = userId ? "/api/v1/orders" : "/api/v1/admin/orders";
-  try {
-    const rows = await api.get<BackendOrder[]>(path);
-    return rows.map(fromBackendOrder);
-  } catch {
-    return [];
-  }
+  const rows = await api.get<BackendOrder[]>(path);
+  return rows.map(fromBackendOrder);
 }
 
 export async function getOrder(id: string): Promise<Order | undefined> {
@@ -328,6 +324,56 @@ export async function listActivities(filterUser?: string | null): Promise<Activi
   }
 }
 
+const PENDING_ACTIVITIES_KEY = "tuangou.pendingActivities";
+const MAX_PENDING = 10;
+const MAX_RETRIES_STORED = 3;
+
+interface PendingActivity {
+  type: ActivityType;
+  meta: Record<string, unknown>;
+  retries: number;
+}
+
+function flushPendingActivities(): void {
+  if (typeof window === "undefined") return;
+  let pending: PendingActivity[] = [];
+  try {
+    pending = JSON.parse(localStorage.getItem(PENDING_ACTIVITIES_KEY) ?? "[]") as PendingActivity[];
+  } catch {
+    pending = [];
+  }
+  if (pending.length === 0) return;
+  // Remove the flushed entries optimistically; failed ones are re-added below
+  localStorage.removeItem(PENDING_ACTIVITIES_KEY);
+  for (const event of pending) {
+    void api.post("/api/v1/events/track", { type: event.type, meta: event.meta }).catch(() => {
+      if (event.retries < MAX_RETRIES_STORED) {
+        storePendingActivity({ ...event, retries: event.retries + 1 });
+      }
+    });
+  }
+}
+
+function storePendingActivity(event: PendingActivity): void {
+  if (typeof window === "undefined") return;
+  let pending: PendingActivity[] = [];
+  try {
+    pending = JSON.parse(localStorage.getItem(PENDING_ACTIVITIES_KEY) ?? "[]") as PendingActivity[];
+  } catch {
+    pending = [];
+  }
+  pending.push(event);
+  // Discard oldest entries if we exceed the max cap
+  if (pending.length > MAX_PENDING) {
+    pending = pending.slice(pending.length - MAX_PENDING);
+  }
+  try {
+    localStorage.setItem(PENDING_ACTIVITIES_KEY, JSON.stringify(pending));
+  } catch {
+    // localStorage write failed (e.g. private browsing quota) — silently ignore
+  }
+}
+
 export function logActivity(
   type: ActivityType,
   userId: string | null,
@@ -343,7 +389,11 @@ export function logActivity(
     createdAt: new Date().toISOString(),
   };
   if (typeof window !== "undefined") {
-    void api.post("/api/v1/events/track", { type, meta: meta ?? {} }).catch(() => {});
+    // First flush any pending events from a previous failed attempt
+    flushPendingActivities();
+    void api.post("/api/v1/events/track", { type, meta: meta ?? {} }).catch(() => {
+      storePendingActivity({ type, meta: meta ?? {}, retries: 0 });
+    });
   }
   return synthetic;
 }

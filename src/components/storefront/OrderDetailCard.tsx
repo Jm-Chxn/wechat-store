@@ -100,8 +100,8 @@ export function OrderDetailCard({
       </div>
 
       <ul className="grid gap-2 sm:grid-cols-2">
-        {order.items.map((it) => (
-          <li key={`${order.id}-${it.productId}`} className="flex items-center gap-3">
+        {order.items.map((it, index) => (
+          <li key={`${order.id}-${it.productId}-${index}`} className="flex items-center gap-3">
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl">
               <ProductImage src={it.imageUrl} alt={it.nameEn} rounded="xl" />
             </div>

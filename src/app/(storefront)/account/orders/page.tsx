@@ -16,6 +16,7 @@ export default function MyOrdersPage() {
   const { user, isReady } = useAuth();
   const router = useRouter();
   const [orders, setOrders] = React.useState<Order[] | null>(null);
+  const [fetchError, setFetchError] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (!isReady) return;
@@ -26,9 +27,18 @@ export default function MyOrdersPage() {
       return;
     }
     let cancelled = false;
-    void listOrders(user.id).then((o) => {
-      if (!cancelled) setOrders(o);
-    });
+    listOrders(user.id)
+      .then((o) => {
+        if (!cancelled) setOrders(o);
+      })
+      .catch((err: unknown) => {
+        if (!cancelled) {
+          setFetchError(
+            err instanceof Error ? err.message : "Could not load orders. Please try again.",
+          );
+          setOrders([]);
+        }
+      });
     return () => {
       cancelled = true;
     };
@@ -44,6 +54,17 @@ export default function MyOrdersPage() {
 
   if (orders === null) {
     return <OrdersPageSkeleton />;
+  }
+
+  if (fetchError) {
+    return (
+      <div className="container py-8">
+        <h1 className="mb-6 text-3xl font-semibold">{t("account.myOrders")}</h1>
+        <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
+          <p className="text-muted-foreground">Could not load orders. Please try again.</p>
+        </div>
+      </div>
+    );
   }
 
   return (
