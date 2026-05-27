@@ -40,22 +40,18 @@ export default function AdminDashboardPage() {
     };
   }, []);
 
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-5 text-sm text-rose-900">
-        <div className="font-semibold">Failed to load dashboard data</div>
-        <div className="mt-1 font-mono text-xs">{error}</div>
-      </div>
-    );
-  }
-
   if (!stats) {
     return (
       <div className="space-y-3">
-        <div className="h-24 animate-pulse rounded-xl bg-slate-200/50" />
+        {error && (
+          <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            Could not load stats. Please refresh.
+          </div>
+        )}
+        <div className="h-24 animate-pulse rounded-xl bg-gray-200" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
-            <div key={i} className="h-24 animate-pulse rounded-xl bg-slate-200/50" />
+            <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-200" />
           ))}
         </div>
       </div>

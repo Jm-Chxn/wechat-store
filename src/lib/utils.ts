@@ -6,12 +6,27 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format an amount in cents as a USD price string.
+ * Format an amount in cents as a locale-aware price string.
  * Used everywhere prices are shown so we have a single source of truth.
+ * When locale is 'zh' or 'zh-CN', formats as CNY (¥). Otherwise formats as USD ($).
  */
-export function formatPrice(cents: number, locale: "en" | "zh" = "en") {
-  const amount = (cents / 100).toFixed(2);
-  return locale === "zh" ? `$${amount}` : `$${amount}`;
+export function formatPrice(cents: number, locale?: string): string {
+  const amount = cents / 100;
+  if (locale === "zh" || locale === "zh-CN") {
+    return new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" }).format(amount);
+  }
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+}
+
+/**
+ * Extract the best display name for a user with fallbacks:
+ * fullName → name → email prefix → "User"
+ */
+export function getDisplayName(user: { fullName?: string | null; name?: string | null; email?: string | null }): string {
+  if (user.fullName) return user.fullName;
+  if (user.name) return user.name;
+  if (user.email) return user.email.split("@")[0];
+  return "User";
 }
 
 export function formatDate(iso: string, locale: "en" | "zh" = "en") {

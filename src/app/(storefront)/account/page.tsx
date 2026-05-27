@@ -75,6 +75,7 @@ export default function AccountPage() {
   }
 
   const displayName = user.fullName || user.name;
+  const [avatarError, setAvatarError] = React.useState(false);
 
   return (
     <div className="container py-8">
@@ -82,15 +83,16 @@ export default function AccountPage() {
       <div className="grid gap-6 lg:grid-cols-[320px,1fr]">
         <aside className="space-y-4 rounded-2xl border border-border bg-surface p-5">
           <div className="flex items-center gap-3">
-            {user.avatarUrl ? (
+            {user.avatarUrl && !avatarError ? (
               /* eslint-disable-next-line @next/next/no-img-element */
               <img
                 src={user.avatarUrl}
                 alt={displayName}
                 className="h-14 w-14 rounded-full bg-secondary object-cover"
+                onError={() => setAvatarError(true)}
               />
             ) : (
-              <div className="grid h-14 w-14 place-items-center rounded-full bg-secondary text-xl font-semibold">
+              <div className="grid h-14 w-14 place-items-center rounded-full bg-[#D94F2B] text-white text-xl font-semibold">
                 {displayName.charAt(0).toUpperCase()}
               </div>
             )}

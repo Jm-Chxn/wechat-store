@@ -28,8 +28,10 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     const stored = readJSON<Locale | null>(StorageKeys.lang, null);
-    if (stored === "en" || stored === "zh") {
-      setLocaleState(stored);
+    const initialLocale: Locale = (stored === "en" || stored === "zh") ? stored : "en";
+    setLocaleState(initialLocale);
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = initialLocale === "zh" ? "zh-CN" : "en";
     }
     setReady(true);
   }, []);
