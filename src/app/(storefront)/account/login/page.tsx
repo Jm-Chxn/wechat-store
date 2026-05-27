@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/providers/AuthProvider";
+import { WeChatIcon } from "@/components/icons/WeChatIcon";
 
 function RequiredMark() {
   return <span className="text-primary"> *</span>;
@@ -51,7 +52,10 @@ function LoginPageInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const next = sp.get("next") ?? "/account";
-  const { signInWithPassword, signUpWithPassword, signInWithGoogle, user, isReady } = useAuth();
+  const { signInWithPassword, signUpWithPassword, signInWithGoogle, signInWithWeChat, user, isReady } = useAuth();
+  // NEXT_PUBLIC_WECHAT_ENABLED=true enables the WeChat button.
+  // Set this in .env.local once WeChat OAuth is configured in Supabase.
+  const wechatEnabled = process.env.NEXT_PUBLIC_WECHAT_ENABLED === "true";
 
   const [signInError, setSignInError] = React.useState<string | null>(null);
   const [signUpError, setSignUpError] = React.useState<string | null>(null);
@@ -94,6 +98,13 @@ function LoginPageInner() {
   const onGoogle = async () => {
     setSignInError(null);
     const { error } = await signInWithGoogle(next);
+    if (error) setSignInError(error || t("login.signInError"));
+  };
+
+  const onWeChat = async () => {
+    if (!wechatEnabled) return;
+    setSignInError(null);
+    const { error } = await signInWithWeChat(next);
     if (error) setSignInError(error || t("login.signInError"));
   };
 
@@ -206,6 +217,17 @@ function LoginPageInner() {
         <div className="space-y-2">
           <Button variant="outline" className="w-full" onClick={onGoogle}>
             {t("login.continueWithGoogle")}
+          </Button>
+          {/* WeChat OAuth button — shown always; disabled until NEXT_PUBLIC_WECHAT_ENABLED=true */}
+          <Button
+            type="button"
+            className="w-full gap-2 bg-[#07C160] text-white hover:bg-[#06A050] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={!wechatEnabled}
+            onClick={onWeChat}
+            title={wechatEnabled ? undefined : t("login.wechatComingSoon")}
+          >
+            <WeChatIcon size={18} />
+            {wechatEnabled ? t("login.continueWithWeChat") : t("login.wechatComingSoon")}
           </Button>
           <Button asChild variant="ghost" className="w-full">
             <Link href="/">{t("login.continueAsGuest")}</Link>
