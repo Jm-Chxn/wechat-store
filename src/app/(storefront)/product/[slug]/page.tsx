@@ -34,11 +34,17 @@ export default function ProductDetailPage() {
   const { toast } = useToast();
 
   const [allProducts, setAllProducts] = React.useState<Product[]>([]);
+  const [productsLoaded, setProductsLoaded] = React.useState(false);
   const [qty, setQty] = React.useState(1);
 
   React.useEffect(() => {
     let cancelled = false;
-    void listProducts().then((p) => { if (!cancelled) setAllProducts(p); });
+    void listProducts().then((p) => {
+      if (!cancelled) {
+        setAllProducts(p);
+        setProductsLoaded(true);
+      }
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -48,10 +54,26 @@ export default function ProductDetailPage() {
   );
 
   if (!params.slug) notFound();
-  if (!product) {
+  if (!productsLoaded) {
     return (
       <div className="container py-16 text-center text-muted-foreground">
         {t("common.loading")}
+      </div>
+    );
+  }
+  if (!product) {
+    return (
+      <div className="container py-16 flex flex-col items-center gap-4">
+        <div className="rounded-2xl border border-border bg-surface px-10 py-12 text-center shadow-sm">
+          <p className="text-lg font-semibold text-ink">{t("product.notFound")}</p>
+          <p className="mt-2 text-sm text-muted-foreground">{t("product.notFoundBody")}</p>
+          <Link
+            href="/shop"
+            className="mt-6 inline-flex items-center rounded-xl bg-primary px-5 py-2.5 text-sm font-medium text-white hover:bg-[#B94023] transition-colors"
+          >
+            {t("shop.breadcrumbShop")}
+          </Link>
+        </div>
       </div>
     );
   }
@@ -98,7 +120,7 @@ export default function ProductDetailPage() {
       </nav>
 
       <div className="grid gap-8 lg:grid-cols-2">
-        <div className="space-y-3">
+        <div>
           <div className="overflow-hidden rounded-2xl border border-border bg-surface">
             <ProductImage
               src={product.imageUrl}
@@ -106,20 +128,6 @@ export default function ProductDetailPage() {
               rounded="none"
               className="aspect-square"
             />
-          </div>
-          <div className="grid grid-cols-4 gap-2">
-            {[0, 1, 2, 3].map((i) => (
-              <div
-                key={i}
-                className="aspect-square overflow-hidden rounded-xl border border-border bg-surface"
-              >
-                <ProductImage
-                  src={product.imageUrl}
-                  alt={`${product.nameEn} ${i + 1}`}
-                  rounded="none"
-                />
-              </div>
-            ))}
           </div>
         </div>
 

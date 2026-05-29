@@ -82,6 +82,8 @@ export const dictionary = {
   "product.added": { en: "Added to cart", zh: "已加入购物车" },
   "product.packSize": { en: "Pack size", zh: "规格" },
   "product.savedForLater": { en: "Save for later", zh: "稍后再买" },
+  "product.notFound": { en: "Product not found", zh: "商品不存在" },
+  "product.notFoundBody": { en: "We couldn't find the product you were looking for.", zh: "未能找到您正在浏览的商品。" },
 
   // dietary tags
   "tag.VEGAN": { en: "Vegan", zh: "纯素" },

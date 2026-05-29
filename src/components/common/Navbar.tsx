@@ -17,7 +17,7 @@ import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useAuth } from "@/providers/AuthProvider";
 import { useCart } from "@/providers/CartProvider";
-import { cn } from "@/lib/utils";
+import { cn, getDisplayName } from "@/lib/utils";
 
 const navItems: { href: string; key: "nav.home" | "nav.shop" | "nav.categories" | "nav.account" }[] = [
   { href: "/", key: "nav.home" },
@@ -104,15 +104,15 @@ export function Navbar() {
                 /* eslint-disable-next-line @next/next/no-img-element */
                 <img
                   src={user.avatarUrl}
-                  alt={user.name}
+                  alt={getDisplayName(user)}
                   className="h-7 w-7 rounded-full bg-secondary object-cover"
                 />
               ) : (
                 <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
-                  {user.name.charAt(0).toUpperCase()}
+                  {getDisplayName(user).charAt(0).toUpperCase()}
                 </span>
               )}
-              <span>{user.name}</span>
+              <span>{getDisplayName(user)}</span>
             </Link>
           ) : (
             <Button asChild size="sm" className="hidden sm:inline-flex">
@@ -165,15 +165,15 @@ export function Navbar() {
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
                       src={user.avatarUrl}
-                      alt={user.name}
+                      alt={getDisplayName(user)}
                       className="h-7 w-7 rounded-full bg-secondary object-cover"
                     />
                   ) : (
                     <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
-                      {user.name.charAt(0).toUpperCase()}
+                      {getDisplayName(user).charAt(0).toUpperCase()}
                     </span>
                   )}
-                  <span>{user.name}</span>
+                  <span>{getDisplayName(user)}</span>
                 </Link>
               ) : (
                 <Button asChild size="sm" className="ml-auto">
