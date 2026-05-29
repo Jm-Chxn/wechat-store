@@ -3,9 +3,8 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Minus, Plus, ShoppingBag, Tag, Trash2 } from "lucide-react";
+import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ProductImage } from "@/components/storefront/ProductImage";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useCart } from "@/providers/CartProvider";
@@ -19,7 +18,6 @@ export default function CartPage() {
   const router = useRouter();
   const [products, setProducts] = React.useState<Product[]>([]);
   const [productsLoading, setProductsLoading] = React.useState(false);
-  const [promo, setPromo] = React.useState("");
 
   const productIdsKey = React.useMemo(
     () => [...new Set(lines.map((l) => l.productId))].sort().join(","),
@@ -153,22 +151,6 @@ export default function CartPage() {
           ))}
         </div>
         <aside className="h-fit space-y-4 rounded-2xl border border-border bg-surface p-5">
-          <div className="space-y-2">
-            <label className="text-xs font-medium text-muted-foreground">
-              {t("cart.promo")}
-            </label>
-            <div className="flex gap-2">
-              <Input
-                placeholder="WELCOME10"
-                value={promo}
-                onChange={(e) => setPromo(e.target.value)}
-              />
-              <Button variant="outline" size="sm">
-                <Tag className="h-4 w-4" />
-                {t("cart.applyPromo")}
-              </Button>
-            </div>
-          </div>
           <div className="space-y-1.5 text-sm">
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("cart.subtotal")}</span>
@@ -176,7 +158,7 @@ export default function CartPage() {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">{t("cart.deliveryFee")}</span>
-              <span>{deliveryFee === 0 ? "Free / 免费" : formatPrice(deliveryFee)}</span>
+              <span>{deliveryFee === 0 ? t("checkout.deliveryFree") : formatPrice(deliveryFee)}</span>
             </div>
             <div className="flex justify-between border-t border-border pt-2 text-base font-semibold">
               <span>{t("cart.total")}</span>

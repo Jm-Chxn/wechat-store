@@ -160,6 +160,15 @@ export const dictionary = {
   "checkout.postalCode": { en: "Postal code", zh: "邮编" },
   "checkout.selectCity": { en: "Select a city", zh: "选择城市" },
   "checkout.backToCart": { en: "Back to cart", zh: "返回购物车" },
+  "checkout.deliveryFree": { en: "Free", zh: "免费" },
+  "checkout.deliveryQualified": {
+    en: "Your order qualifies for home delivery!",
+    zh: "您的订单已达到送货上门标准！",
+  },
+  "checkout.deliveryNotQualified": {
+    en: "Add more items to qualify for home delivery (min. $150)",
+    zh: "再加点商品即可享受送货上门（最低消费 $150）",
+  },
 
   // order confirmed
   "order.confirmed": { en: "Order Confirmed", zh: "订单已确认" },

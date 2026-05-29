@@ -102,7 +102,10 @@ export async function addOrIncrementCartItem(
     .insert({ cart_id: cartId, product_id: productId, quantity });
   if (!insert.error) return;
 
-  // UNIQUE conflict — another concurrent insert beat us. Re-fetch and update.
+  // 23505 = PostgreSQL unique_violation — a concurrent insert beat us to the
+  // (cart_id, product_id) unique constraint. This is safe to retry: re-fetch
+  // the existing row and increment its quantity. Any other error code indicates
+  // a real failure and should be re-thrown.
   if (insert.error.code === "23505") {
     const { data: again, error: againErr } = await supabase
       .from("cart_items")
