@@ -43,12 +43,14 @@ interface AuthContextValue {
   user: AuthUser | null;
   session: Session | null;
   isReady: boolean;
+  profileError: string | null;
   role: Role | null;
   isAdmin: boolean;
   signInWithPassword: (email: string, password: string) => Promise<{ error: string | null }>;
   signUpWithPassword: (input: SignUpInput) => Promise<{ error: string | null }>;
   updateProfile: (input: UpdateProfileInput) => Promise<{ error: string | null }>;
   signInWithGoogle: (returnTo?: string) => Promise<{ error: string | null }>;
+  signInWithWeChat: (returnTo?: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -77,10 +79,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<Session | null>(null);
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isReady, setReady] = React.useState(false);
+  const [profileError, setProfileError] = React.useState<string | null>(null);
 
   const refreshProfile = React.useCallback(async (sess: Session | null) => {
     if (!sess?.user) {
       setUser(null);
+      setProfileError(null);
       return;
     }
 
@@ -99,12 +103,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (result === null) {
         console.warn("[AuthProvider] Profile fetch timed out – using defaults.");
         setUser(mapMeToUser(sess, null));
+        setProfileError("Profile failed to load");
       } else {
         setUser(mapMeToUser(sess, result));
+        setProfileError(null);
       }
     } catch (err) {
       console.warn("[AuthProvider] Profile fetch threw:", err);
       setUser(mapMeToUser(sess, null));
+      setProfileError("Profile failed to load");
     }
   }, []);
 
@@ -204,6 +211,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
+  const signInWithWeChat = React.useCallback(async (returnTo?: string) => {
+    try {
+      const origin =
+        typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
+      const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
+      // "wechat" is not yet in Supabase's Provider union — cast via the
+      // official parameter type rather than using a bare `as any`.
+      type OAuthProvider = Parameters<typeof supabase.auth.signInWithOAuth>[0]["provider"];
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "wechat" as OAuthProvider,
+        options: { redirectTo: `${origin}/auth/callback${target}` },
+      });
+      return { error: error?.message ?? null };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Unable to sign in with WeChat.";
+      return { error: message };
+    }
+  }, []);
+
   const updateProfile = React.useCallback(
     async (input: UpdateProfileInput) => {
       try {
@@ -255,22 +281,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       isReady,
+      profileError,
       role: user?.role ?? null,
       isAdmin: user?.role === "admin",
       signInWithPassword,
       signUpWithPassword,
       updateProfile,
       signInWithGoogle,
+      signInWithWeChat,
       signOut,
     }),
     [
       user,
       session,
       isReady,
+      profileError,
       signInWithPassword,
       signUpWithPassword,
       updateProfile,
       signInWithGoogle,
+      signInWithWeChat,
       signOut,
     ],
   );
