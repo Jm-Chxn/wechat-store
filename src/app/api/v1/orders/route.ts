@@ -147,8 +147,11 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
   }[] = [];
 
   for (const item of body.items as Array<{ productId: string; quantity: unknown }>) {
-    // Safe: we already verified every productId has a productMap entry above.
-    const product = productMap.get(item.productId)!;
+    const product = productMap.get(item.productId);
+    if (!product) return apiError(409, "One or more products are no longer available");
+    if (!Number.isInteger(product.price_cents) || product.price_cents <= 0) {
+      return apiError(400, "Invalid product price data");
+    }
     const qty = Number(item.quantity);
     if (!Number.isFinite(qty) || qty < 1) {
       return apiError(400, "quantity must be >= 1");
@@ -167,7 +170,7 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
   const deliveryFeeCents = subtotalCents < 5000 ? 199 : 0;
   const totalCents = subtotalCents + deliveryFeeCents;
 
-  const idempotencyKey = request.headers.get("Idempotency-Key") ?? request.headers.get("idempotency-key");
+  const idempotencyKey = request.headers.get("idempotency-key");
   const orderId = idempotencyKey
     ? `ord_idem_${shortHash(`${userId}:${idempotencyKey}`)}`
     : `ord_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
