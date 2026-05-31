@@ -45,8 +45,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, signOut } = useAuth();
 
+  // Prefetch admin sub-routes so sidebar clicks feel instant
+  React.useEffect(() => {
+    const adminRoutes = ["/admin/orders", "/admin/users", "/admin/products", "/admin/activity"];
+    adminRoutes.forEach((route, i) => {
+      setTimeout(() => router.prefetch(route), i * 100);
+    });
+  }, [router]);
+
   return (
-    <div className="flex min-h-screen bg-slate-100 text-slate-900">
+    <div className="flex h-screen overflow-hidden bg-slate-100 text-slate-900">
       <aside className="hidden w-60 shrink-0 flex-col bg-slate-900 text-slate-200 md:flex">
         <div className="flex h-16 items-center gap-2 border-b border-slate-800 px-5">
           <span className="grid h-8 w-8 place-items-center rounded-lg bg-amber-soft text-slate-900 text-xs font-bold">
@@ -103,7 +111,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col overflow-y-auto">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-5 backdrop-blur md:px-8">
           <MobileNav pathname={pathname} onSignOut={async () => { await signOut(); router.push("/"); }} />
           <Breadcrumb pathname={pathname} />
