@@ -31,7 +31,7 @@ async function authHeader(): Promise<Record<string, string>> {
 
 export async function apiFetch<T>(
   path: string,
-  init: RequestInit & { json?: unknown } = {},
+  init: RequestInit & { json?: unknown; timeoutMs?: number } = {},
 ): Promise<T> {
   const headers: Record<string, string> = {
     Accept: "application/json",
@@ -44,7 +44,7 @@ export async function apiFetch<T>(
     requestInit.body = JSON.stringify(init.json);
   }
   const controller = new AbortController();
-  const timeoutMs = 2500;
+  const timeoutMs = init.timeoutMs ?? 2500;
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
   const res = await fetch(`${BASE_URL}${path}`, { ...requestInit, signal: controller.signal }).finally(
     () => {
@@ -70,8 +70,8 @@ export async function apiFetch<T>(
 }
 
 export const api = {
-  get: <T>(path: string) => apiFetch<T>(path, { method: "GET" }),
-  post: <T>(path: string, json?: unknown) => apiFetch<T>(path, { method: "POST", json }),
-  patch: <T>(path: string, json?: unknown) => apiFetch<T>(path, { method: "PATCH", json }),
+  get: <T>(path: string, options?: { timeoutMs?: number }) => apiFetch<T>(path, { method: "GET", ...options }),
+  post: <T>(path: string, json?: unknown, options?: { timeoutMs?: number }) => apiFetch<T>(path, { method: "POST", json, ...options }),
+  patch: <T>(path: string, json?: unknown, options?: { timeoutMs?: number }) => apiFetch<T>(path, { method: "PATCH", json, ...options }),
   delete: <T = void>(path: string) => apiFetch<T>(path, { method: "DELETE" }),
 };

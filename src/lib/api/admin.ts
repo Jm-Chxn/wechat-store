@@ -61,9 +61,9 @@ export interface AdminStatsPayload {
 }
 
 export const adminApi = {
-  listOrders: () => api.get<AdminOrder[]>("/api/v1/admin/orders"),
-  listUsers: () => api.get<AdminUser[]>("/api/v1/admin/users"),
-  stats: () => api.get<AdminStatsPayload>("/api/v1/admin/stats"),
+  listOrders: () => api.get<AdminOrder[]>("/api/v1/admin/orders", { timeoutMs: 10000 }),
+  listUsers: () => api.get<AdminUser[]>("/api/v1/admin/users", { timeoutMs: 10000 }),
+  stats: () => api.get<AdminStatsPayload>("/api/v1/admin/stats", { timeoutMs: 15000 }),
   updateOrderStatus: (id: string, status: AdminOrder["status"]) =>
     api.patch<AdminOrder>(`/api/v1/admin/orders/${encodeURIComponent(id)}`, { status }),
 };

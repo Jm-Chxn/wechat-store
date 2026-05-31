@@ -24,24 +24,25 @@ export default function AdminUsersPage() {
   const [roleFilter, setRoleFilter] = React.useState<"ALL" | "user" | "admin">("ALL");
   const [selected, setSelected] = React.useState<AdminUser | null>(null);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const [u, o] = await Promise.all([adminApi.listUsers(), adminApi.listOrders()]);
-        if (cancelled) return;
-        setUsers(u);
-        setOrders(o);
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadData = React.useCallback(async () => {
+    setError(null);
+    setLoading(true);
+    setUsers([]);
+    setOrders([]);
+    try {
+      const [u, o] = await Promise.all([adminApi.listUsers(), adminApi.listOrders()]);
+      setUsers(u);
+      setOrders(o);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  React.useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   const filtered = React.useMemo(() => {
     const term = search.trim().toLowerCase();
@@ -104,6 +105,11 @@ export default function AdminUsersPage() {
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
           <div className="font-semibold">Failed to load users</div>
           <div className="mt-1 font-mono text-xs">{error}</div>
+          <div>
+            <button onClick={loadData} className="mt-2 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50">
+              Retry
+            </button>
+          </div>
         </div>
       )}
 
@@ -117,7 +123,6 @@ export default function AdminUsersPage() {
             <col className="w-44" />
             <col className="w-24" />
             <col className="w-28" />
-            <col className="w-32" />
             <col className="w-32" />
           </colgroup>
           <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">

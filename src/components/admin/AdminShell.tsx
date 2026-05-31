@@ -105,8 +105,16 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-slate-200 bg-white/80 px-5 backdrop-blur md:px-8">
-          <MobileNav pathname={pathname} />
+          <MobileNav pathname={pathname} onSignOut={async () => { await signOut(); router.push("/"); }} />
           <Breadcrumb pathname={pathname} />
+          <button
+            type="button"
+            onClick={async () => { await signOut(); router.push("/"); }}
+            className="md:hidden ml-auto grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-700"
+            aria-label="Sign out"
+          >
+            <LogOut className="h-4 w-4" />
+          </button>
           <div className="ml-auto hidden items-center gap-3 md:flex">
             <div className="relative hidden lg:block">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
@@ -183,7 +191,7 @@ function Breadcrumb({ pathname }: { pathname: string }) {
   );
 }
 
-function MobileNav({ pathname }: { pathname: string }) {
+function MobileNav({ pathname, onSignOut }: { pathname: string; onSignOut: () => void }) {
   const [open, setOpen] = React.useState(false);
   return (
     <div className="md:hidden">
@@ -216,6 +224,23 @@ function MobileNav({ pathname }: { pathname: string }) {
               </Link>
             );
           })}
+          <div className="my-1 border-t border-slate-100" />
+          <Link
+            href="/"
+            onClick={() => setOpen(false)}
+            className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Open storefront
+          </Link>
+          <button
+            type="button"
+            onClick={() => { setOpen(false); onSignOut(); }}
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
+          >
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
         </div>
       )}
     </div>

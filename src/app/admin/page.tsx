@@ -23,22 +23,21 @@ export default function AdminDashboardPage() {
   const [recent, setRecent] = React.useState<AdminOrder[]>([]);
   const [error, setError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const [s, o] = await Promise.all([adminApi.stats(), adminApi.listOrders()]);
-        if (cancelled) return;
-        setStats(s);
-        setRecent(o.slice(0, 8));
-      } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : String(err));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadData = React.useCallback(async () => {
+    setError(null);
+    setStats(null);
+    try {
+      const [s, o] = await Promise.all([adminApi.stats(), adminApi.listOrders()]);
+      setStats(s);
+      setRecent(o.slice(0, 8));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }, []);
+
+  React.useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   if (!stats) {
     return (
@@ -46,6 +45,11 @@ export default function AdminDashboardPage() {
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             Could not load stats. Please refresh.
+            <div>
+              <button onClick={loadData} className="mt-2 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50">
+                Retry
+              </button>
+            </div>
           </div>
         )}
         <div className="h-24 animate-pulse rounded-xl bg-gray-200" />
