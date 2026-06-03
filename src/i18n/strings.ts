@@ -119,6 +119,10 @@ export const dictionary = {
   "cart.itemCount": { en: "{n} items", zh: "{n} 件商品" },
 
   // checkout
+  "checkout.namePlaceholder": { en: "Jane Doe", zh: "张三" },
+  "checkout.phonePlaceholder": { en: "(416) 555-0144", zh: "138 0000 0000" },
+  "checkout.postalPlaceholder": { en: "V6B 1A1", zh: "100000" },
+  "checkout.nonePickup": { en: "None", zh: "无" },
   "checkout.title": { en: "Checkout", zh: "结账" },
   "checkout.contact": { en: "Contact", zh: "联系方式" },
   "checkout.contactName": { en: "Full Name", zh: "姓名" },
@@ -193,6 +197,7 @@ export const dictionary = {
   "order.signInToView": { en: "Sign in to see your past orders.", zh: "登录后查看历史订单。" },
 
   // account
+  "account.ordersError": { en: "Could not load orders. Please try again.", zh: "无法加载订单，请重试。" },
   "account.title": { en: "My Account", zh: "我的账户" },
   "account.welcome": { en: "Welcome back, {name}", zh: "欢迎回来，{name}" },
   "account.myOrders": { en: "My Orders", zh: "我的订单" },
@@ -253,6 +258,21 @@ export const dictionary = {
   "wechat.adminBadge": { en: "Admin", zh: "管理员" },
 
   // admin
+  "admin.statsError": { en: "Could not load stats. Please refresh.", zh: "无法加载数据，请刷新页面。" },
+  "admin.overview": { en: "Overview", zh: "总览" },
+  "admin.welcomeBack": { en: "Welcome back, admin", zh: "欢迎回来，管理员" },
+  "admin.dashboardSubtitle": { en: "Today's pulse and the last seven days of operating signal.", zh: "今日概况及过去七天的运营数据。" },
+  "admin.statTotalCustomers": { en: "Total customers", zh: "客户总数" },
+  "admin.statProfilesSub": { en: "profiles in Supabase", zh: "Supabase 中的用户档案" },
+  "admin.statOrdersToday": { en: "Orders today", zh: "今日订单" },
+  "admin.statRevenueToday": { en: "Revenue today", zh: "今日营收" },
+  "admin.statTopCategory": { en: "Top category", zh: "热门分类" },
+  "admin.ordersLast7d": { en: "Orders — last 7 days", zh: "订单 — 过去7天" },
+  "admin.dailyCount": { en: "Daily count", zh: "每日订单数" },
+  "admin.revenueByCategory": { en: "Revenue by category", zh: "分类营收" },
+  "admin.usd": { en: "USD", zh: "美元" },
+  "admin.latestOrders": { en: "Latest orders", zh: "最新订单" },
+  "admin.noOrders": { en: "No orders yet.", zh: "暂无订单。" },
   "admin.title": { en: "Admin Dashboard", zh: "后台总览" },
   "admin.products": { en: "Products", zh: "商品" },
   "admin.users": { en: "Users", zh: "用户" },
@@ -261,9 +281,7 @@ export const dictionary = {
   "admin.statTotalUsers": { en: "Total Users", zh: "用户总数" },
   "admin.statTodayOrders": { en: "Today's Orders", zh: "今日订单" },
   "admin.statTodayRevenue": { en: "Today's Revenue", zh: "今日营收" },
-  "admin.statTopCategory": { en: "Top Category", zh: "热门分类" },
   "admin.recentOrders": { en: "Recent Orders", zh: "最新订单" },
-  "admin.revenueByCategory": { en: "Revenue by Category", zh: "分类营收" },
   "admin.uploadNew": { en: "Upload New Item", zh: "上架新商品" },
   "admin.delete": { en: "Delete", zh: "删除" },
   "admin.edit": { en: "Edit", zh: "编辑" },
@@ -338,8 +356,8 @@ export const dictionary = {
   "footer.terms": { en: "Terms", zh: "服务条款" },
   "footer.privacy": { en: "Privacy", zh: "隐私政策" },
   "footer.copyright": {
-    en: "© 2026 Good Food Tuangou Co-op. Demo build.",
-    zh: "© 2026 好食材团购合作社。演示版本。",
+    en: "© 2026 Good Food Tuangou Co-op.",
+    zh: "© 2026 好食材团购合作社。",
   },
 } as const;
 

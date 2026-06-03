@@ -34,7 +34,7 @@ export default function MyOrdersPage() {
       .catch((err: unknown) => {
         if (!cancelled) {
           setFetchError(
-            err instanceof Error ? err.message : "Could not load orders. Please try again.",
+            err instanceof Error ? err.message : t("account.ordersError"),
           );
           setOrders([]);
         }
@@ -61,7 +61,7 @@ export default function MyOrdersPage() {
       <div className="container py-8">
         <h1 className="mb-6 text-3xl font-semibold">{t("account.myOrders")}</h1>
         <div className="rounded-2xl border border-dashed border-border bg-surface p-10 text-center">
-          <p className="text-muted-foreground">Could not load orders. Please try again.</p>
+          <p className="text-muted-foreground">{t("account.ordersError")}</p>
         </div>
       </div>
     );

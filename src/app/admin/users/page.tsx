@@ -4,6 +4,7 @@ import * as React from "react";
 import { Search, Mail, Phone, ShoppingBag, X, Calendar } from "lucide-react";
 import { adminApi, type AdminUser, type AdminOrder } from "@/lib/api/admin";
 import { formatDate, formatPrice } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 /**
  * /admin/users — one row per registered customer.
@@ -16,6 +17,7 @@ import { formatDate, formatPrice } from "@/lib/utils";
  * side drawer.
  */
 export default function AdminUsersPage() {
+  const { t } = useLanguage();
   const [users, setUsers] = React.useState<AdminUser[]>([]);
   const [orders, setOrders] = React.useState<AdminOrder[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -73,7 +75,7 @@ export default function AdminUsersPage() {
           <h1 className="mt-1 text-2xl font-semibold text-slate-900">Registered users</h1>
           <p className="mt-1 text-sm text-slate-600">
             {loading
-              ? "Loading…"
+              ? t("common.loading")
               : `${filtered.length} of ${users.length} customer${users.length === 1 ? "" : "s"}`}
           </p>
         </div>
@@ -141,7 +143,7 @@ export default function AdminUsersPage() {
             {loading && (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
-                  Loading…
+                  {t("common.loading")}
                 </td>
               </tr>
             )}
