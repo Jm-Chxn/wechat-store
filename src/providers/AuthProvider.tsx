@@ -39,7 +39,7 @@ interface MeResponse {
   phone: string | null;
 }
 
-interface AuthContextValue {
+export interface AuthContextValue {
   user: AuthUser | null;
   session: Session | null;
   isReady: boolean;
