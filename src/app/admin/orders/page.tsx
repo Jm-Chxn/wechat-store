@@ -5,10 +5,14 @@ import { Search, Filter, X, Phone, Mail, Calendar, Package, MessageCircle } from
 import { StatusPill } from "@/components/admin/AdminShell";
 import { adminApi, type AdminOrder } from "@/lib/api/admin";
 import { formatDate, formatPrice } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageProvider";
+import { useToast } from "@/components/ui/toast";
 
 const STATUSES: AdminOrder["status"][] = ["CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"];
 
 export default function AdminOrdersPage() {
+  const { t } = useLanguage();
+  const { toast } = useToast();
   const [orders, setOrders] = React.useState<AdminOrder[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
@@ -68,7 +72,10 @@ export default function AdminOrdersPage() {
       setOrders((cur) => cur.map((o) => (o.id === id ? { ...o, ...updated } : o)));
       setSelected((cur) => (cur && cur.id === id ? { ...cur, ...updated } : cur));
     } catch (err) {
-      alert(err instanceof Error ? err.message : String(err));
+      toast({
+        title: "Failed to update order status",
+        description: err instanceof Error ? err.message : String(err),
+      });
     }
   };
 
@@ -84,7 +91,7 @@ export default function AdminOrdersPage() {
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             {loading
-              ? "Loading…"
+              ? t("common.loading")
               : `${filtered.length} of ${orders.length} order${orders.length === 1 ? "" : "s"}`}
           </p>
         </div>
