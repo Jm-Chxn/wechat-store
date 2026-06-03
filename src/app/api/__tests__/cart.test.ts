@@ -7,9 +7,13 @@ const mockSupabase = {
   from: mockFrom,
 };
 
-vi.mock("@/app/api/_lib/supabase-admin", () => ({
-  createAdminClient: vi.fn(() => mockSupabase),
-}));
+vi.mock("@/app/api/_lib/supabase-admin", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/app/api/_lib/supabase-admin")>();
+  return {
+    ...actual,
+    createAdminClient: vi.fn(() => mockSupabase),
+  };
+});
 
 import { GET as getCart } from "@/app/api/v1/cart/route";
 import { POST as addItem } from "@/app/api/v1/cart/items/route";
@@ -47,6 +51,7 @@ function makeCartTable() {
   return {
     select: vi.fn().mockReturnThis(),
     insert: vi.fn().mockReturnThis(),
+    upsert: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
     delete: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
@@ -118,18 +123,14 @@ describe("GET /api/v1/cart", () => {
       if (table === "carts") {
         return {
           select: vi.fn().mockReturnThis(),
-          insert: vi.fn().mockImplementation(() => {
-            cartCreated = true;
-            return { select: vi.fn().mockReturnThis(), single: vi.fn(() => Promise.resolve({ data: dbCart, error: null })) };
+          upsert: vi.fn().mockReturnValue({
+            select: vi.fn().mockReturnThis(),
+            single: vi.fn(() => Promise.resolve({ data: dbCart, error: null })),
           }),
           eq: vi.fn().mockReturnThis(),
-          single: vi.fn(() =>
-            cartCreated
-              ? Promise.resolve({ data: dbCart, error: null })
-              : Promise.resolve({ data: null, error: null }),
-          ),
+          single: vi.fn(() => Promise.resolve({ data: dbCart, error: null })),
           then: (resolve: (v: unknown) => unknown) =>
-            Promise.resolve({ data: cartCreated ? dbCart : null, error: null }).then(resolve),
+            Promise.resolve({ data: dbCart, error: null }).then(resolve),
         };
       }
       if (table === "cart_items") return makeItemsTable([]);

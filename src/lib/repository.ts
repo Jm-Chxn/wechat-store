@@ -149,7 +149,8 @@ function fromBackendActivity(a: BackendActivity): Activity {
   if (a.meta) {
     try {
       meta = JSON.parse(a.meta) as Record<string, unknown>;
-    } catch {
+    } catch (err) {
+      console.warn("[repository] failed to parse activity meta:", (a as { id?: string }).id, err);
       meta = undefined;
     }
   }
