@@ -17,7 +17,7 @@ import { useLanguage } from "@/i18n/LanguageProvider";
  * side drawer.
  */
 export default function AdminUsersPage() {
-  const { t } = useLanguage();
+  const { t, locale } = useLanguage();
   const [users, setUsers] = React.useState<AdminUser[]>([]);
   const [orders, setOrders] = React.useState<AdminOrder[]>([]);
   const [loading, setLoading] = React.useState(true);
@@ -70,13 +70,13 @@ export default function AdminUsersPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-            Customers
+            {t("admin.customersSection")}
           </div>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-900">Registered users</h1>
+          <h1 className="mt-1 text-2xl font-semibold text-slate-900">{t("admin.customersTitle")}</h1>
           <p className="mt-1 text-sm text-slate-600">
             {loading
               ? t("common.loading")
-              : `${filtered.length} of ${users.length} customer${users.length === 1 ? "" : "s"}`}
+              : t("admin.customersCount", { n: filtered.length, total: users.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -86,7 +86,7 @@ export default function AdminUsersPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by name, email, phone…"
+              placeholder={t("admin.customersSearchPlaceholder")}
               className="w-72 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
             />
           </div>
@@ -96,20 +96,20 @@ export default function AdminUsersPage() {
             className="rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-sm text-slate-700 focus:outline-none"
             aria-label="Filter by role"
           >
-            <option value="ALL">All roles</option>
-            <option value="user">Customers</option>
-            <option value="admin">Admins</option>
+            <option value="ALL">{t("admin.customersFilterAll")}</option>
+            <option value="user">{t("admin.customersFilterUsers")}</option>
+            <option value="admin">{t("admin.customersFilterAdmins")}</option>
           </select>
         </div>
       </header>
 
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-          <div className="font-semibold">Failed to load users</div>
+          <div className="font-semibold">{t("admin.customersLoadError")}</div>
           <div className="mt-1 font-mono text-xs">{error}</div>
           <div>
             <button onClick={loadData} className="mt-2 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50">
-              Retry
+              {t("admin.retry")}
             </button>
           </div>
         </div>
@@ -129,14 +129,14 @@ export default function AdminUsersPage() {
           </colgroup>
           <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-4 py-2.5">Customer</th>
-              <th className="px-4 py-2.5">WeChat</th>
-              <th className="px-4 py-2.5">Email</th>
-              <th className="px-4 py-2.5">Phone</th>
-              <th className="px-4 py-2.5">Role</th>
-              <th className="px-4 py-2.5 text-right">Orders</th>
-              <th className="px-4 py-2.5 text-right">Total spent</th>
-              <th className="px-4 py-2.5">Last seen</th>
+              <th className="px-4 py-2.5">{t("admin.userColCustomer")}</th>
+              <th className="px-4 py-2.5">{t("admin.userColWeChat")}</th>
+              <th className="px-4 py-2.5">{t("admin.userColEmail")}</th>
+              <th className="px-4 py-2.5">{t("admin.userColPhone")}</th>
+              <th className="px-4 py-2.5">{t("admin.userColRole")}</th>
+              <th className="px-4 py-2.5 text-right">{t("admin.userColOrders")}</th>
+              <th className="px-4 py-2.5 text-right">{t("admin.userColTotalSpent")}</th>
+              <th className="px-4 py-2.5">{t("admin.userColLastSeen")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -150,7 +150,7 @@ export default function AdminUsersPage() {
             {!loading && filtered.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
-                  No customers match.
+                  {t("admin.noCustomersMatch")}
                 </td>
               </tr>
             )}
@@ -239,6 +239,8 @@ function UserDrawer({
   orders: AdminOrder[];
   onClose: () => void;
 }) {
+  const { t, locale } = useLanguage();
+
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -257,7 +259,7 @@ function UserDrawer({
       <aside
         className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col overflow-y-auto bg-white shadow-2xl"
         role="dialog"
-        aria-label="User details"
+        aria-label={t("admin.navCustomers")}
       >
         <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div className="flex items-center gap-3">
@@ -284,7 +286,7 @@ function UserDrawer({
             type="button"
             onClick={onClose}
             className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
-            aria-label="Close"
+            aria-label={t("common.back")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -293,18 +295,18 @@ function UserDrawer({
         <div className="space-y-5 px-5 py-5 text-sm">
           <section className="rounded-xl bg-slate-50 p-4">
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Contact
+              {t("admin.contactSection")}
             </div>
             <ul className="mt-2 space-y-1.5 text-xs text-slate-700">
               {user.fullName && (
                 <li>
-                  <span className="text-slate-500">Full name: </span>
+                  <span className="text-slate-500">{t("admin.fullNameLabel")}: </span>
                   {user.fullName}
                 </li>
               )}
               {user.wechatId && (
                 <li>
-                  <span className="text-slate-500">WeChat: </span>
+                  <span className="text-slate-500">{t("admin.wechatLabel")}: </span>
                   {user.wechatId}
                 </li>
               )}
@@ -315,7 +317,7 @@ function UserDrawer({
                     {user.email}
                   </a>
                 ) : (
-                  <span className="text-slate-400">no email on file</span>
+                  <span className="text-slate-400">{t("admin.noEmail")}</span>
                 )}
               </li>
               <li className="flex items-center gap-1.5">
@@ -325,31 +327,31 @@ function UserDrawer({
                     {user.phone}
                   </a>
                 ) : (
-                  <span className="text-slate-400">no phone on file</span>
+                  <span className="text-slate-400">{t("admin.noPhone")}</span>
                 )}
               </li>
               {user.createdAt && (
                 <li className="flex items-center gap-1.5">
                   <Calendar className="h-3 w-3 text-slate-400" />
-                  Joined {formatDate(user.createdAt)}
+                  {t("admin.joinedDate", { date: formatDate(user.createdAt) })}
                 </li>
               )}
             </ul>
           </section>
 
           <section className="grid grid-cols-2 gap-3">
-            <Stat label="Orders" value={String(user.orderCount)} />
-            <Stat label="Total spent" value={formatPrice(user.totalSpentCents)} emphasis />
+            <Stat label={t("admin.usersTotalOrders")} value={String(user.orderCount)} />
+            <Stat label={t("admin.usersTotalSpent")} value={formatPrice(user.totalSpentCents)} emphasis />
           </section>
 
           <section>
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
               <ShoppingBag className="h-3 w-3" />
-              Order history ({orders.length})
+              {t("admin.orderHistory", { n: orders.length })}
             </div>
             {orders.length === 0 ? (
               <div className="rounded-lg border border-dashed border-slate-200 px-4 py-6 text-center text-xs text-slate-500">
-                No orders yet.
+                {t("admin.noOrdersYet")}
               </div>
             ) : (
               <ul className="space-y-2">
@@ -365,8 +367,8 @@ function UserDrawer({
                       </span>
                     </div>
                     <div className="mt-1 text-[11px] text-slate-500">
-                      {o.createdAt ? formatDate(o.createdAt) : "—"} · {o.status.toLowerCase()} ·{" "}
-                      {o.items.length} item{o.items.length === 1 ? "" : "s"}
+                      {o.createdAt ? formatDate(o.createdAt) : "—"} · {t(`admin.status${o.status.charAt(0) + o.status.slice(1).toLowerCase()}` as Parameters<typeof t>[0])} ·{" "}
+                      {o.items.length} {locale === "zh" ? "件" : `item${o.items.length === 1 ? "" : "s"}`}
                     </div>
                   </li>
                 ))}

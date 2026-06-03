@@ -15,7 +15,9 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
+import { useLanguage } from "@/i18n/LanguageProvider";
 import { cn } from "@/lib/utils";
+import type { DictionaryKey } from "@/i18n/strings";
 
 /**
  * The whole admin chrome. Deliberately styled to contrast with the storefront
@@ -31,20 +33,21 @@ import { cn } from "@/lib/utils";
 const nav: Array<{
   href: string;
   icon: typeof LayoutDashboard;
-  label: string;
+  labelKey: DictionaryKey;
   exact?: boolean;
 }> = [
-  { href: "/admin", icon: LayoutDashboard, label: "Overview", exact: true },
-  { href: "/admin/orders", icon: ReceiptText, label: "Orders" },
-  { href: "/admin/users", icon: Users, label: "Customers" },
-  { href: "/admin/products", icon: Package, label: "Products" },
-  { href: "/admin/activity", icon: Activity, label: "Activity" },
+  { href: "/admin", icon: LayoutDashboard, labelKey: "admin.overview", exact: true },
+  { href: "/admin/orders", icon: ReceiptText, labelKey: "admin.orders" },
+  { href: "/admin/users", icon: Users, labelKey: "admin.navCustomers" },
+  { href: "/admin/products", icon: Package, labelKey: "admin.products" },
+  { href: "/admin/activity", icon: Activity, labelKey: "admin.activity" },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { t } = useLanguage();
 
   // Prefetch admin sub-routes so sidebar clicks feel instant
   React.useEffect(() => {
@@ -85,7 +88,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
                 )}
               >
                 <item.icon className="h-4 w-4" />
-                <span>{item.label}</span>
+                <span>{t(item.labelKey)}</span>
               </Link>
             );
           })}
@@ -96,7 +99,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-slate-800/60"
           >
             <ExternalLink className="h-3.5 w-3.5" />
-            <span>Open storefront</span>
+            <span>{t("admin.openStorefront")}</span>
           </Link>
           <button
             type="button"
@@ -107,7 +110,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left hover:bg-slate-800/60"
           >
             <LogOut className="h-3.5 w-3.5" />
-            <span>Sign out</span>
+            <span>{t("nav.signOut")}</span>
           </button>
         </div>
       </aside>
@@ -120,7 +123,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             type="button"
             onClick={async () => { await signOut(); router.push("/"); }}
             className="md:hidden ml-auto grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-700"
-            aria-label="Sign out"
+            aria-label={t("nav.signOut")}
           >
             <LogOut className="h-4 w-4" />
           </button>
@@ -130,8 +133,8 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
                 type="search"
-                placeholder="Search orders, customers…"
-                aria-label="Search"
+                placeholder={t("admin.searchPlaceholder")}
+                aria-label={t("admin.searchPlaceholder")}
                 className="w-72 rounded-lg border border-slate-200 bg-slate-50 py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:bg-white focus:outline-none"
                 onChange={(e) => {
                   const term = e.target.value.trim();
@@ -143,7 +146,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               />
             </div>
             <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[10px] font-medium uppercase tracking-wider text-emerald-700">
-              live
+              {t("admin.live")}
             </span>
             {user && (
               <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 text-sm">
@@ -203,13 +206,14 @@ function Breadcrumb({ pathname }: { pathname: string }) {
 
 function MobileNav({ pathname, onSignOut }: { pathname: string; onSignOut: () => void }) {
   const [open, setOpen] = React.useState(false);
+  const { t } = useLanguage();
   return (
     <div className="md:hidden">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="grid h-9 w-9 place-items-center rounded-lg border border-slate-200 text-slate-700"
-        aria-label="Open admin nav"
+        aria-label={t("nav.openMenu")}
       >
         <LayoutDashboard className="h-4 w-4" />
       </button>
@@ -230,7 +234,7 @@ function MobileNav({ pathname, onSignOut }: { pathname: string; onSignOut: () =>
                 )}
               >
                 <item.icon className="h-4 w-4" />
-                {item.label}
+                {t(item.labelKey)}
               </Link>
             );
           })}
@@ -241,7 +245,7 @@ function MobileNav({ pathname, onSignOut }: { pathname: string; onSignOut: () =>
             className="flex items-center gap-3 rounded-md px-3 py-2 text-sm text-slate-700 hover:bg-slate-100"
           >
             <ExternalLink className="h-4 w-4" />
-            Open storefront
+            {t("admin.openStorefront")}
           </Link>
           <div className="px-3 py-2">
             <LanguageToggle />
@@ -252,7 +256,7 @@ function MobileNav({ pathname, onSignOut }: { pathname: string; onSignOut: () =>
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm text-slate-700 hover:bg-slate-100"
           >
             <LogOut className="h-4 w-4" />
-            Sign out
+            {t("nav.signOut")}
           </button>
         </div>
       )}
@@ -298,17 +302,18 @@ export function AdminStatCard({
 
 /** Status pill with semantic color per order state. */
 export function StatusPill({ status }: { status: "CONFIRMED" | "PROCESSING" | "COMPLETED" | "CANCELLED" }) {
+  const { t } = useLanguage();
   const styles: Record<typeof status, string> = {
     CONFIRMED: "bg-green-50 text-green-700 ring-green-200",
     PROCESSING: "bg-amber-50 text-amber-700 ring-amber-200",
     COMPLETED: "bg-emerald-50 text-emerald-700 ring-emerald-200",
     CANCELLED: "bg-rose-50 text-rose-700 ring-rose-200",
   };
-  const label: Record<typeof status, string> = {
-    CONFIRMED: "Confirmed",
-    PROCESSING: "Processing",
-    COMPLETED: "Completed",
-    CANCELLED: "Cancelled",
+  const labelKey: Record<typeof status, "admin.statusConfirmed" | "admin.statusProcessing" | "admin.statusCompleted" | "admin.statusCancelled"> = {
+    CONFIRMED: "admin.statusConfirmed",
+    PROCESSING: "admin.statusProcessing",
+    COMPLETED: "admin.statusCompleted",
+    CANCELLED: "admin.statusCancelled",
   };
   return (
     <span
@@ -317,7 +322,7 @@ export function StatusPill({ status }: { status: "CONFIRMED" | "PROCESSING" | "C
         styles[status],
       )}
     >
-      {label[status]}
+      {t(labelKey[status])}
     </span>
   );
 }

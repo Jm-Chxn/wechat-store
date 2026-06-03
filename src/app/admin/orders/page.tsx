@@ -7,8 +7,16 @@ import { adminApi, type AdminOrder } from "@/lib/api/admin";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { useLanguage } from "@/i18n/LanguageProvider";
 import { useToast } from "@/components/ui/toast";
+import type { DictionaryKey } from "@/i18n/strings";
 
 const STATUSES: AdminOrder["status"][] = ["CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED"];
+
+const STATUS_LABEL_KEY: Record<AdminOrder["status"], DictionaryKey> = {
+  CONFIRMED: "admin.statusConfirmed",
+  PROCESSING: "admin.statusProcessing",
+  COMPLETED: "admin.statusCompleted",
+  CANCELLED: "admin.statusCancelled",
+};
 
 export default function AdminOrdersPage() {
   const { t } = useLanguage();
@@ -84,15 +92,15 @@ export default function AdminOrdersPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-            Orders
+            {t("admin.orders")}
           </div>
           <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-            All orders
+            {t("admin.ordersPageTitle")}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
             {loading
               ? t("common.loading")
-              : `${filtered.length} of ${orders.length} order${orders.length === 1 ? "" : "s"}`}
+              : t("admin.ordersCount", { n: filtered.length, total: orders.length })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -102,7 +110,7 @@ export default function AdminOrdersPage() {
               type="search"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ID, name, phone…"
+              placeholder={t("admin.ordersSearchPlaceholder")}
               className="w-72 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
             />
           </div>
@@ -114,11 +122,9 @@ export default function AdminOrdersPage() {
               className="bg-transparent text-slate-700 focus:outline-none"
               aria-label="Filter by status"
             >
-              <option value="ALL">All statuses</option>
+              <option value="ALL">{t("admin.ordersFilterAllStatuses")}</option>
               {STATUSES.map((s) => (
-                <option key={s} value={s}>
-                  {s.charAt(0) + s.slice(1).toLowerCase()}
-                </option>
+                <option key={s} value={s}>{t(STATUS_LABEL_KEY[s])}</option>
               ))}
             </select>
           </div>
@@ -127,7 +133,7 @@ export default function AdminOrdersPage() {
 
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-          <div className="font-semibold">Failed to load orders</div>
+          <div className="font-semibold">{t("admin.ordersLoadError")}</div>
           <div className="mt-1 font-mono text-xs">{error}</div>
         </div>
       )}
@@ -145,32 +151,32 @@ export default function AdminOrdersPage() {
           </colgroup>
           <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             <tr>
-              <th className="px-4 py-2.5">Order</th>
-              <th className="px-4 py-2.5">Customer</th>
-              <th className="px-4 py-2.5">Phone</th>
-              <th className="px-4 py-2.5">Items</th>
-              <th className="px-4 py-2.5 text-right">Total</th>
-              <th className="px-4 py-2.5">Status</th>
-              <th className="px-4 py-2.5">Placed</th>
+              <th className="px-4 py-2.5">{t("admin.orderColOrder")}</th>
+              <th className="px-4 py-2.5">{t("admin.orderColCustomer")}</th>
+              <th className="px-4 py-2.5">{t("admin.orderColPhone")}</th>
+              <th className="px-4 py-2.5">{t("admin.orderColItems")}</th>
+              <th className="px-4 py-2.5 text-right">{t("admin.orderColTotal")}</th>
+              <th className="px-4 py-2.5">{t("admin.ordersStatus")}</th>
+              <th className="px-4 py-2.5">{t("admin.orderColPlaced")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
-                  Loading orders…
+                  {t("common.loading")}
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
-                  No orders match.
+                  {t("admin.ordersNoMatch")}
                 </td>
               </tr>
             )}
             {filtered.map((o) => {
-              const customer = o.customerName ?? o.guestName ?? "Guest";
+              const customer = o.customerName ?? o.guestName ?? t("common.guest");
               return (
                 <tr
                   key={o.id}
@@ -186,7 +192,7 @@ export default function AdminOrdersPage() {
                       <div className="text-xs text-slate-500">{o.customerEmail}</div>
                     )}
                     {o.customerWechatId && (
-                      <div className="text-xs text-slate-500">WeChat: {o.customerWechatId}</div>
+                      <div className="text-xs text-slate-500">{t("admin.wechatId", { id: o.customerWechatId })}</div>
                     )}
                   </td>
                   <td className="px-4 py-3 align-top">
@@ -205,7 +211,7 @@ export default function AdminOrdersPage() {
                         </span>
                       ))}
                       {o.items.length > 2 && (
-                        <span className="text-slate-400"> +{o.items.length - 2} more</span>
+                        <span className="text-slate-400"> {t("admin.itemsMore", { n: o.items.length - 2 })}</span>
                       )}
                     </div>
                   </td>
@@ -245,6 +251,8 @@ function OrderDrawer({
   onClose: () => void;
   onChangeStatus: (status: AdminOrder["status"]) => void;
 }) {
+  const { t, locale } = useLanguage();
+
   React.useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") onClose();
@@ -263,12 +271,12 @@ function OrderDrawer({
       <aside
         className="fixed right-0 top-0 z-50 flex h-full w-full max-w-md flex-col overflow-y-auto bg-white shadow-2xl"
         role="dialog"
-        aria-label="Order details"
+        aria-label={t("admin.orderDetail")}
       >
         <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div>
             <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-              Order detail
+              {t("admin.orderDetail")}
             </div>
             <code className="mt-1 block font-mono text-xs text-slate-700">{order.id}</code>
           </div>
@@ -276,7 +284,7 @@ function OrderDrawer({
             type="button"
             onClick={onClose}
             className="grid h-8 w-8 place-items-center rounded-md text-slate-500 hover:bg-slate-100"
-            aria-label="Close"
+            aria-label={t("common.back")}
           >
             <X className="h-4 w-4" />
           </button>
@@ -284,10 +292,10 @@ function OrderDrawer({
         <div className="space-y-5 px-5 py-5 text-sm">
           <section className="rounded-xl bg-slate-50 p-4">
             <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Customer
+              {t("admin.customerSection")}
             </div>
             <div className="mt-1 text-base font-semibold text-slate-900">
-              {order.customerName ?? order.guestName ?? "Guest"}
+              {order.customerName ?? order.guestName ?? t("common.guest")}
             </div>
             <ul className="mt-2 space-y-1 text-xs text-slate-600">
               {order.customerEmail && (
@@ -309,7 +317,7 @@ function OrderDrawer({
               {order.customerWechatId && (
                 <li className="flex items-center gap-1.5">
                   <MessageCircle className="h-3 w-3" />
-                  <span>WeChat: {order.customerWechatId}</span>
+                  <span>{t("admin.wechatId", { id: order.customerWechatId })}</span>
                 </li>
               )}
               {order.createdAt && (
@@ -323,7 +331,7 @@ function OrderDrawer({
 
           <section>
             <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Status
+              {t("admin.orderStatusSection")}
             </div>
             <div className="grid grid-cols-2 gap-1.5">
               {STATUSES.map((s) => (
@@ -337,7 +345,7 @@ function OrderDrawer({
                       : "rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
                   }
                 >
-                  {s.charAt(0) + s.slice(1).toLowerCase()}
+                  {t(STATUS_LABEL_KEY[s])}
                 </button>
               ))}
             </div>
@@ -346,7 +354,7 @@ function OrderDrawer({
           <section>
             <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-slate-500">
               <Package className="h-3 w-3" />
-              Items ({order.items.length})
+              {t("admin.orderItemsSection", { n: order.items.length })}
             </div>
             <ul className="space-y-2">
               {order.items.map((it, idx) => (
@@ -366,9 +374,11 @@ function OrderDrawer({
                   )}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm font-medium text-slate-900">
-                      {it.nameEn}
+                      {locale === "zh" ? it.nameZh : it.nameEn}
                     </div>
-                    <div className="text-xs text-slate-500">{it.nameZh}</div>
+                    <div className="text-xs text-slate-500">
+                      {locale === "zh" ? it.nameEn : it.nameZh}
+                    </div>
                   </div>
                   <div className="text-right text-xs text-slate-600">
                     <div className="tabular-nums">{formatPrice(it.unitPriceCents)}</div>
@@ -382,7 +392,7 @@ function OrderDrawer({
           {(order.deliveryAddress?.line1 ? (
             <section className="rounded-xl bg-slate-50 p-4 text-sm">
               <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Delivery address
+                {t("admin.deliveryAddress")}
               </div>
               <p className="mt-1 text-slate-900">
                 {order.deliveryAddress.line1}
@@ -395,21 +405,22 @@ function OrderDrawer({
             order.pickupCommunityEn && (
               <section className="rounded-xl bg-slate-50 p-4 text-sm">
                 <div className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                  Pickup
+                  {t("admin.pickup")}
                 </div>
                 <p className="mt-1 text-slate-900">
-                  {order.pickupCommunityEn}
-                  {order.pickupCommunityZh ? ` / ${order.pickupCommunityZh}` : ""}
+                  {locale === "zh" && order.pickupCommunityZh
+                    ? order.pickupCommunityZh
+                    : order.pickupCommunityEn}
                 </p>
               </section>
             )
           ))}
 
           <section className="space-y-1 rounded-xl bg-slate-50 p-4 text-sm">
-            <Row label="Subtotal" value={formatPrice(order.subtotalCents)} />
-            <Row label="Delivery" value={formatPrice(order.deliveryFeeCents)} />
+            <Row label={t("admin.subtotal")} value={formatPrice(order.subtotalCents)} />
+            <Row label={t("admin.deliveryFee")} value={formatPrice(order.deliveryFeeCents)} />
             <div className="my-1 border-t border-slate-200" />
-            <Row label="Total" value={formatPrice(order.totalCents)} emphasis />
+            <Row label={t("admin.totalLabel")} value={formatPrice(order.totalCents)} emphasis />
           </section>
         </div>
       </aside>
