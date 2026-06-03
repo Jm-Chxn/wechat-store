@@ -30,11 +30,12 @@ export function withRoute<TArgs extends unknown[]>(
             `Add them to .env.local and restart \`npm run dev\`.`,
         );
       }
-      const msg = err instanceof Error ? err.message : String(err);
-      const stack = err instanceof Error ? err.stack : undefined;
-      console.error(`[api:${name}] unhandled error:`, msg);
-      if (stack) console.error(stack);
-      return apiError(500, msg || "Internal Server Error");
+      const isDev = process.env.NODE_ENV !== "production";
+      const msg = isDev
+        ? (err instanceof Error ? err.message : String(err))
+        : "Internal Server Error";
+      console.error(`[api:${name}] unhandled error:`, err instanceof Error ? err.message : String(err));
+      return apiError(500, msg);
     }
   };
 }

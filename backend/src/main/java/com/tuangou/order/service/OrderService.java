@@ -59,6 +59,11 @@ public class OrderService {
     for (PlaceOrderRequest.OrderLineRequest line : req.items()) {
       ProductEntity p = byId.get(line.productId());
       if (p == null) throw ApiException.notFound("product " + line.productId());
+      if (line.quantity() > p.getStockCount()) {
+        throw ApiException.badRequest(
+            "Insufficient stock for: " + p.getNameEn() +
+            " (requested: " + line.quantity() + ", available: " + p.getStockCount() + ")");
+      }
       int unit = p.getPriceCents();
       subtotal += unit * line.quantity();
       items.add(OrderItemEntity.builder()
@@ -112,12 +117,16 @@ public class OrderService {
   }
 
   @Transactional
-  public OrderDto updateStatus(String orderId, String status) {
-    OrderEntity o = orders.findById(orderId).orElseThrow(() -> ApiException.notFound("order"));
-    if (!List.of("CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED").contains(status)) {
+  public OrderDto updateStatus(String orderId, String newStatus, UUID requesterId, boolean isAdmin) {
+    OrderEntity o = orders.findById(orderId)
+        .orElseThrow(() -> ApiException.notFound("order not found"));
+    if (!isAdmin && !o.getUserId().equals(requesterId)) {
+      throw ApiException.forbidden("Not your order");
+    }
+    if (!List.of("CONFIRMED", "PROCESSING", "COMPLETED", "CANCELLED").contains(newStatus)) {
       throw ApiException.badRequest("invalid status");
     }
-    o.setStatus(status);
+    o.setStatus(newStatus);
     orders.save(o);
     return toDto(o, orderItems.findByOrderId(o.getId()));
   }

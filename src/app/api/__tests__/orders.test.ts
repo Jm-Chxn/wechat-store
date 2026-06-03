@@ -74,13 +74,12 @@ describe("GET /api/v1/orders", () => {
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
-          order: vi.fn(() => Promise.resolve({ data: [dbOrder], error: null })),
-        };
-      }
-      if (table === "order_items") {
-        return {
-          select: vi.fn().mockReturnThis(),
-          eq: vi.fn(() => Promise.resolve({ data: [dbOrderItem], error: null })),
+          order: vi.fn(() =>
+            Promise.resolve({
+              data: [{ ...dbOrder, order_items: [dbOrderItem] }],
+              error: null,
+            }),
+          ),
         };
       }
       return {};

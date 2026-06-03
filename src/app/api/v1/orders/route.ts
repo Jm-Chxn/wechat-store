@@ -1,10 +1,18 @@
 import { type NextRequest } from "next/server";
 import { createHash } from "node:crypto";
+import { z } from "zod";
 import { requireAuth } from "@/app/api/_lib/auth";
 import { createAdminClient } from "@/app/api/_lib/supabase-admin";
 import { apiError, ok } from "@/app/api/_lib/response";
 import { mapOrder } from "@/app/api/_lib/mappers";
 import { withRoute } from "@/app/api/_lib/route-wrapper";
+
+const AddressSchema = z.object({
+  line1: z.string().min(1).max(255),
+  line2: z.string().max(255).optional().nullable(),
+  city: z.string().min(1).max(100),
+  postalCode: z.string().min(1).max(20),
+});
 
 /**
  * GET /api/v1/orders — list the caller's own orders, newest first.
@@ -17,7 +25,10 @@ export const GET = withRoute("GET /api/v1/orders", async (request: NextRequest) 
   const supabase = createAdminClient();
   const { data: orders, error } = await supabase
     .from("orders")
-    .select("*")
+    .select(`
+      *,
+      order_items (*)
+    `)
     .eq("user_id", userId)
     .order("created_at", { ascending: false });
 
@@ -26,24 +37,10 @@ export const GET = withRoute("GET /api/v1/orders", async (request: NextRequest) 
     return apiError(500, error.message);
   }
 
-  const result = await Promise.all(
-    (orders ?? []).map(async (order) => {
-      const { data: items, error: itemsError } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", order.id);
-      if (itemsError) {
-        console.error(
-          `[GET /api/v1/orders] order_items select failed for order ${order.id}:`,
-          itemsError,
-        );
-      }
-      return mapOrder(
-        order as Record<string, unknown>,
-        (items ?? []) as Record<string, unknown>[],
-      );
-    }),
-  );
+  const result = (orders ?? []).map((order) => {
+    const { order_items: items, ...orderData } = order as Record<string, unknown> & { order_items?: Record<string, unknown>[] };
+    return mapOrder(orderData, (items ?? []) as Record<string, unknown>[]);
+  });
 
   return ok(result);
 });
@@ -198,15 +195,14 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
     }
   }
 
-  const deliveryAddress =
-    body.deliveryAddress && typeof body.deliveryAddress === "object"
-      ? {
-          line1: String(body.deliveryAddress.line1 ?? ""),
-          line2: body.deliveryAddress.line2 ? String(body.deliveryAddress.line2) : null,
-          city: String(body.deliveryAddress.city ?? ""),
-          postalCode: String(body.deliveryAddress.postalCode ?? ""),
-        }
-      : null;
+  let deliveryAddress: z.infer<typeof AddressSchema> | null = null;
+  if (body.deliveryAddress && typeof body.deliveryAddress === "object") {
+    const parsed = AddressSchema.safeParse(body.deliveryAddress);
+    if (!parsed.success) {
+      return apiError(400, `Invalid delivery address: ${parsed.error.issues.map((i) => i.message).join(", ")}`);
+    }
+    deliveryAddress = parsed.data;
+  }
 
   const { data: order, error: orderError } = await supabase
     .from("orders")

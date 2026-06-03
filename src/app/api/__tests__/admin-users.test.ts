@@ -72,9 +72,10 @@ describe("GET /api/v1/admin/users", () => {
       if (table === "profiles") {
         profilesCall++;
         if (profilesCall === 1) return makeProfilesRoleMock("admin");
-        // bulk SELECT * .order
+        // bulk SELECT * .range .order
         return {
           select: vi.fn().mockReturnThis(),
+          range: vi.fn().mockReturnThis(),
           order: vi.fn(() => Promise.resolve({ data: [profile], error: null })),
         };
       }
