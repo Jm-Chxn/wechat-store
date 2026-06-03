@@ -8,6 +8,9 @@ export default defineConfig({
     environment: "jsdom",
     globals: true,
     setupFiles: ["./src/test/setup.ts"],
+    env: {
+      NEXT_PUBLIC_API_BASE_URL: "http://localhost:3000",
+    },
     css: false,
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["**/node_modules/**", "**/.next/**", "tests/e2e/**"],

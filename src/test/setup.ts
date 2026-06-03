@@ -10,6 +10,21 @@ vi.mock("@/utils/supabase/client", () => ({
   createClient: () => mockSupabase,
 }));
 
+// Mock Next.js navigation hooks so components using useRouter work in jsdom.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    refresh: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    prefetch: vi.fn(),
+  }),
+  usePathname: () => "/",
+  useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({}),
+}));
+
 // Re-exported for convenience in tests that want to flip auth state.
 export { mockSupabase };
 
