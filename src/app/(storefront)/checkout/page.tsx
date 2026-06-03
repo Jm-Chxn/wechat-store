@@ -300,7 +300,7 @@ export default function CheckoutPage() {
                   id="ck-name"
                   required
                   autoComplete="name"
-                  placeholder="Jane Doe"
+                  placeholder={t("checkout.namePlaceholder")}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
@@ -314,7 +314,7 @@ export default function CheckoutPage() {
                   id="ck-phone"
                   required
                   inputMode="tel"
-                  placeholder="(416) 555-0144"
+                  placeholder={t("checkout.phonePlaceholder")}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
@@ -347,7 +347,7 @@ export default function CheckoutPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {qualifiesForDelivery ? (
-                      <SelectItem value="none">None / 无</SelectItem>
+                      <SelectItem value="none">{t("checkout.nonePickup")}</SelectItem>
                     ) : (
                       <>
                         <SelectItem value="maple">
@@ -437,7 +437,7 @@ export default function CheckoutPage() {
                   <Input
                     id="ck-postal"
                     required
-                    placeholder="V6B 1A1"
+                    placeholder={t("checkout.postalPlaceholder")}
                     value={address.postalCode}
                     onChange={(e) => setAddress({ ...address, postalCode: e.target.value })}
                   />

@@ -39,8 +39,9 @@ type SignInValues = z.infer<ReturnType<typeof buildSignInSchema>>;
 type SignUpValues = z.infer<ReturnType<typeof buildSignUpSchema>>;
 
 export default function LoginPage() {
+  const { t } = useLanguage();
   return (
-    <React.Suspense fallback={<div className="container py-12 text-center text-muted-foreground">Loading…</div>}>
+    <React.Suspense fallback={<div className="container py-12 text-center text-muted-foreground">{t("common.loading")}</div>}>
       <LoginPageInner />
     </React.Suspense>
   );

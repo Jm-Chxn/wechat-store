@@ -17,8 +17,10 @@ import { AdminStatCard, StatusPill } from "@/components/admin/AdminShell";
 import { adminApi, type AdminOrder, type AdminStatsPayload } from "@/lib/api/admin";
 import { categoryBySlug } from "@/data/categories";
 import { formatPrice } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageProvider";
 
 export default function AdminDashboardPage() {
+  const { t } = useLanguage();
   const [stats, setStats] = React.useState<AdminStatsPayload | null>(null);
   const [recent, setRecent] = React.useState<AdminOrder[]>([]);
   const [error, setError] = React.useState<string | null>(null);
@@ -44,7 +46,7 @@ export default function AdminDashboardPage() {
       <div className="space-y-3">
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-            Could not load stats. Please refresh.
+            {t("admin.statsError")}
             <div>
               <button onClick={loadData} className="mt-2 rounded-lg bg-white px-3 py-1.5 text-xs font-medium text-red-700 border border-red-200 hover:bg-red-50">
                 Retry
@@ -69,36 +71,36 @@ export default function AdminDashboardPage() {
       <header className="flex items-end justify-between">
         <div>
           <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-            Overview
+            {t("admin.overview")}
           </div>
           <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-            Welcome back, admin
+            {t("admin.welcomeBack")}
           </h1>
           <p className="mt-1 text-sm text-slate-600">
-            Today&apos;s pulse and the last seven days of operating signal.
+            {t("admin.dashboardSubtitle")}
           </p>
         </div>
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <AdminStatCard
-          label="Total customers"
+          label={t("admin.statTotalCustomers")}
           value={String(stats.totalUsers)}
-          sub="profiles in Supabase"
+          sub={t("admin.statProfilesSub")}
           accent="neutral"
         />
         <AdminStatCard
-          label="Orders today"
+          label={t("admin.statOrdersToday")}
           value={String(stats.ordersToday)}
           accent="primary"
         />
         <AdminStatCard
-          label="Revenue today"
+          label={t("admin.statRevenueToday")}
           value={formatPrice(stats.revenueTodayCents)}
           accent="success"
         />
         <AdminStatCard
-          label="Top category"
+          label={t("admin.statTopCategory")}
           value={topCat ? topCat.nameEn : "—"}
           sub={topCat ? topCat.nameZh : undefined}
           accent="neutral"
@@ -106,7 +108,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title="Orders — last 7 days" subtitle="Daily count">
+        <Panel title={t("admin.ordersLast7d")} subtitle={t("admin.dailyCount")}>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.ordersLast7d}>
@@ -132,7 +134,7 @@ export default function AdminDashboardPage() {
           </div>
         </Panel>
 
-        <Panel title="Revenue by category" subtitle="USD">
+        <Panel title={t("admin.revenueByCategory")} subtitle={t("admin.usd")}>
           <div className="h-56">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -170,7 +172,7 @@ export default function AdminDashboardPage() {
       </div>
 
       <Panel
-        title="Latest orders"
+        title={t("admin.latestOrders")}
         subtitle={`${recent.length} most recent`}
         action={
           <Link
@@ -182,7 +184,7 @@ export default function AdminDashboardPage() {
         }
       >
         {recent.length === 0 ? (
-          <div className="py-6 text-center text-sm text-slate-500">No orders yet.</div>
+          <div className="py-6 text-center text-sm text-slate-500">{t("admin.noOrders")}</div>
         ) : (
           <ul className="divide-y divide-slate-100">
             {recent.map((o) => (
