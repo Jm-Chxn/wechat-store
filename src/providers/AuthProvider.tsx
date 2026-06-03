@@ -56,7 +56,13 @@ export interface AuthContextValue {
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(undefined);
 
-const supabase = createClient();
+// Lazy-initialise the Supabase browser client so the module can be imported
+// during Next.js static rendering (where env vars are absent) without throwing.
+let _supabase: ReturnType<typeof createClient> | null = null;
+function getSupabase() {
+  if (!_supabase) _supabase = createClient();
+  return _supabase;
+}
 
 function mapMeToUser(sess: Session, me: MeResponse | null): AuthUser {
   const fullName = me?.fullName ?? null;
@@ -117,7 +123,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   React.useEffect(() => {
     let isMounted = true;
-    void supabase.auth
+    void getSupabase().auth
       .getSession()
       .then(async ({ data }) => {
         if (!isMounted) return;
@@ -132,7 +138,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => {
         if (isMounted) setReady(true);
       });
-    const { data: sub } = supabase.auth.onAuthStateChange(async (_event, sess) => {
+    const { data: sub } = getSupabase().auth.onAuthStateChange(async (_event, sess) => {
       setSession(sess);
       try {
         await refreshProfile(sess);
@@ -150,7 +156,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signInWithPassword = React.useCallback(async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await getSupabase().auth.signInWithPassword({ email, password });
       return { error: error?.message ?? null };
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unable to sign in.";
@@ -160,7 +166,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signUpWithPassword = React.useCallback(async (input: SignUpInput) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const { data, error } = await getSupabase().auth.signUp({
         email: input.email,
         password: input.password,
         options: {
@@ -200,7 +206,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const origin =
         typeof window !== "undefined" ? window.location.origin : "http://localhost:3000";
       const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { error } = await getSupabase().auth.signInWithOAuth({
         provider: "google",
         options: { redirectTo: `${origin}/auth/callback${target}` },
       });
@@ -218,8 +224,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const target = returnTo ? `?next=${encodeURIComponent(returnTo)}` : "";
       // "wechat" is not yet in Supabase's Provider union — cast via the
       // official parameter type rather than using a bare `as any`.
-      type OAuthProvider = Parameters<typeof supabase.auth.signInWithOAuth>[0]["provider"];
-      const { error } = await supabase.auth.signInWithOAuth({
+      type OAuthProvider = Parameters<ReturnType<typeof createClient>["auth"]["signInWithOAuth"]>[0]["provider"];
+      const { error } = await getSupabase().auth.signInWithOAuth({
         provider: "wechat" as OAuthProvider,
         options: { redirectTo: `${origin}/auth/callback${target}` },
       });
@@ -235,7 +241,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         let activeSession = session;
         if (!activeSession) {
-          const { data } = await supabase.auth.getSession();
+          const { data } = await getSupabase().auth.getSession();
           activeSession = data.session;
         }
         if (!activeSession) return { error: "Not signed in." };
@@ -268,7 +274,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = React.useCallback(async () => {
     try {
-      await supabase.auth.signOut();
+      await getSupabase().auth.signOut();
     } catch {
       // Ignore sign-out failures so UI can still clear client state via auth listener.
     } finally {

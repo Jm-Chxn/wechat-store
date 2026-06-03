@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { AdminGate } from "@/components/admin/AdminGate";
 import { AdminShell } from "@/components/admin/AdminShell";
 

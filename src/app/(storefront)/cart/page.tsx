@@ -99,7 +99,7 @@ export default function CartPage() {
             >
               <Link
                 href={`/product/${product.slug}`}
-                className="h-24 w-24 shrink-0 overflow-hidden rounded-xl"
+                className="relative h-24 w-24 shrink-0 overflow-hidden rounded-xl"
               >
                 <ProductImage
                   src={product.imageUrl}
@@ -122,7 +122,7 @@ export default function CartPage() {
                     <button
                       onClick={() => setQuantity(product.id, quantity - 1)}
                       className="grid h-9 w-9 place-items-center text-muted-foreground hover:text-ink"
-                      aria-label="-"
+                      aria-label="Decrease quantity"
                     >
                       <Minus className="h-4 w-4" />
                     </button>
@@ -130,14 +130,14 @@ export default function CartPage() {
                     <button
                       onClick={() => setQuantity(product.id, quantity + 1)}
                       className="grid h-9 w-9 place-items-center text-muted-foreground hover:text-ink"
-                      aria-label="+"
+                      aria-label="Increase quantity"
                     >
                       <Plus className="h-4 w-4" />
                     </button>
                   </div>
                   <button
                     onClick={() => remove(product.id)}
-                    className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-destructive"
+                    className="inline-flex min-h-11 items-center gap-1 px-2 py-2 text-xs text-muted-foreground hover:text-destructive"
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                     {t("cart.remove")}

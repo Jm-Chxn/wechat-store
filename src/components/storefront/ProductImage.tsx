@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { ImageOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
+interface Props {
   src: string;
   alt: string;
   className?: string;
@@ -12,16 +13,15 @@ interface Props extends React.ImgHTMLAttributes<HTMLImageElement> {
 }
 
 /**
- * <img> wrapper that falls back to a warm gradient if the network image fails
- * — important because the demo runs against external Unsplash URLs that may
- * occasionally fail to load.
+ * Next.js Image wrapper that falls back to a warm gradient if the network
+ * image fails — important because the demo runs against external Unsplash URLs
+ * that may occasionally fail to load.
  */
 export function ProductImage({
   src,
   alt,
   className,
   rounded = "2xl",
-  ...rest
 }: Props) {
   const [errored, setErrored] = React.useState(false);
   const radius =
@@ -48,19 +48,17 @@ export function ProductImage({
     );
   }
 
-  // eslint-disable-next-line @next/next/no-img-element
   return (
-    <img
+    <Image
       src={src}
       alt={alt}
-      loading="lazy"
+      fill
       onError={() => setErrored(true)}
       className={cn(
-        "h-full w-full object-cover img-fallback",
+        "object-cover img-fallback",
         radius,
         className,
       )}
-      {...rest}
     />
   );
 }

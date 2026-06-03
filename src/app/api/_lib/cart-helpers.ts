@@ -4,40 +4,21 @@ import { mapCart } from "./mappers";
 type SupabaseClient = ReturnType<typeof createAdminClient>;
 
 /**
- * Look up a user's cart row, creating one if it doesn't exist. Race-safe:
- * if two concurrent requests both miss the SELECT and try to INSERT, the
- * `carts.user_id UNIQUE` constraint will reject the loser with PostgREST
- * error code `23505` — we catch that case and re-SELECT.
+ * Look up a user's cart row, creating one if it doesn't exist.
+ * Uses a single atomic upsert to avoid double-roundtrip SELECT+INSERT races.
  */
 export async function getOrCreateCart(supabase: SupabaseClient, userId: string) {
-  const { data: existing, error: selectError } = await supabase
+  const { data: cart, error } = await supabase
     .from("carts")
-    .select("*")
-    .eq("user_id", userId)
-    .single();
-  if (selectError && selectError.code !== "PGRST116") {
-    throw new Error(`cart lookup failed: ${selectError.message}`);
-  }
-  if (existing) return existing as Record<string, unknown>;
-
-  const insert = await supabase
-    .from("carts")
-    .insert({ user_id: userId })
+    .upsert(
+      { user_id: userId },
+      { onConflict: "user_id", ignoreDuplicates: false }
+    )
     .select()
     .single();
-  if (!insert.error) return insert.data as Record<string, unknown>;
 
-  // Concurrent insert won the race; re-fetch.
-  if (insert.error.code === "23505") {
-    const refetch = await supabase
-      .from("carts")
-      .select("*")
-      .eq("user_id", userId)
-      .single();
-    if (refetch.error) throw new Error(`cart re-fetch failed: ${refetch.error.message}`);
-    return refetch.data as Record<string, unknown>;
-  }
-  throw new Error(`cart insert failed: ${insert.error.message}`);
+  if (error) throw error;
+  return cart as Record<string, unknown>;
 }
 
 export async function fetchCartResponse(supabase: SupabaseClient, cartId: string) {

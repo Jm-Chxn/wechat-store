@@ -115,7 +115,7 @@ export default function AdminProductsPage() {
             {products.map((p) => (
               <TableRow key={p.id}>
                 <TableCell>
-                  <div className="h-10 w-10 overflow-hidden rounded-xl">
+                  <div className="relative h-10 w-10 overflow-hidden rounded-xl">
                     <ProductImage src={p.imageUrl} alt={p.nameEn} rounded="xl" />
                   </div>
                 </TableCell>

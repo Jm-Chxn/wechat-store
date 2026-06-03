@@ -75,7 +75,7 @@ export function ProductCard({ product, className }: Props) {
         </div>
         <Button
           variant={oos ? "outline" : "default"}
-          size="sm"
+          size="default"
           onClick={handleAdd}
           disabled={oos}
           className="mt-auto"

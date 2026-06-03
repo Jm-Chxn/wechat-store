@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, Noto_Sans_SC } from "next/font/google";
 import { AppProviders } from "@/providers/AppProviders";
 import "./globals.css";
@@ -20,6 +20,25 @@ export const metadata: Metadata = {
   title: "Good Food, Shared Together / 好食材，一起团",
   description:
     "Community group-buying for fresh meats, sauces, noodles, and pantry staples — neighbour-friendly prices.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "好食材团购",
+  },
+  openGraph: {
+    title: "Good Food, Shared Together / 好食材，一起团",
+    description: "Community group-buying, neighbour-friendly prices.",
+    type: "website",
+    locale: "zh_CN",
+    alternateLocale: "en_US",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({
