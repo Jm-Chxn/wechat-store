@@ -14,6 +14,7 @@ import {
   Search,
 } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
+import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { cn } from "@/lib/utils";
 
 /**
@@ -124,6 +125,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             <LogOut className="h-4 w-4" />
           </button>
           <div className="ml-auto hidden items-center gap-3 md:flex">
+            <LanguageToggle />
             <div className="relative hidden lg:block">
               <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
               <input
@@ -241,6 +243,9 @@ function MobileNav({ pathname, onSignOut }: { pathname: string; onSignOut: () =>
             <ExternalLink className="h-4 w-4" />
             Open storefront
           </Link>
+          <div className="px-3 py-2">
+            <LanguageToggle />
+          </div>
           <button
             type="button"
             onClick={() => { setOpen(false); onSignOut(); }}
