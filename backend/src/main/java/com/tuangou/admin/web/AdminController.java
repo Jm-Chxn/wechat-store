@@ -8,6 +8,7 @@ import com.tuangou.admin.service.AdminService;
 import com.tuangou.catalog.dto.ProductDto;
 import com.tuangou.catalog.dto.ProductUpsertRequest;
 import com.tuangou.catalog.service.CatalogService;
+import com.tuangou.common.auth.AuthenticatedUser;
 import com.tuangou.order.dto.OrderDto;
 import com.tuangou.order.dto.OrderStatusUpdateRequest;
 import com.tuangou.order.service.OrderService;
@@ -62,7 +63,7 @@ public class AdminController {
   @PatchMapping("/orders/{id}")
   public OrderDto setOrderStatus(@PathVariable String id,
                                  @Valid @RequestBody OrderStatusUpdateRequest req) {
-    return orderService.updateStatus(id, req.status());
+    return orderService.updateStatus(id, req.status(), AuthenticatedUser.currentUserId(), true);
   }
 
   @GetMapping("/stats")

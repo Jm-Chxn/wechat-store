@@ -31,12 +31,17 @@ export const GET = withRoute("GET /api/v1/admin/users", async (request: NextRequ
   const authResult = await requireAdmin(request);
   if (authResult instanceof Response) return authResult;
 
+  const url = new URL(request.url);
+  const page = Math.max(0, parseInt(url.searchParams.get("page") ?? "0", 10));
+  const size = Math.min(100, Math.max(1, parseInt(url.searchParams.get("size") ?? "50", 10)));
+
   const supabase = createAdminClient();
 
   const { data: profiles, error: profilesError } = await supabase
     .from("profiles")
     .select("user_id, nickname, full_name, wechat_id, avatar_url, role, created_at, last_seen_at")
-    .order("last_seen_at", { ascending: false, nullsFirst: false });
+    .range(page * size, (page + 1) * size - 1)
+    .order("created_at", { ascending: false });
 
   if (profilesError) {
     console.error("[GET /api/v1/admin/users] profiles failed:", profilesError);
