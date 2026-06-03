@@ -36,8 +36,7 @@ afterEach(() => {
 describe("GET /api/v1/health", () => {
   it("returns 500 with a clear message when SUPABASE_SERVICE_ROLE_KEY is missing", async () => {
     vi.mocked(isAdminConfigured).mockReturnValue(false);
-    const req = new Request("http://localhost/api/v1/health");
-    const res = await health(req as Parameters<typeof health>[0]);
+    const res = await health();
     expect(res.status).toBe(500);
     const body = await res.json();
     expect(body.message).toMatch(/SUPABASE_SERVICE_ROLE_KEY/);
@@ -50,8 +49,7 @@ describe("GET /api/v1/health", () => {
     mockFrom.mockReturnValue({
       select: vi.fn(() => Promise.resolve({ count: 36, error: null })),
     });
-    const req = new Request("http://localhost/api/v1/health");
-    const res = await health(req as Parameters<typeof health>[0]);
+    const res = await health();
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.status).toBe("ok");
