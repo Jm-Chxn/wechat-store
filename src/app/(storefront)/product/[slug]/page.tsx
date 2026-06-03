@@ -121,12 +121,11 @@ export default function ProductDetailPage() {
 
       <div className="grid gap-8 lg:grid-cols-2">
         <div>
-          <div className="overflow-hidden rounded-2xl border border-border bg-surface">
+          <div className="relative aspect-square overflow-hidden rounded-2xl border border-border bg-surface">
             <ProductImage
               src={product.imageUrl}
               alt={product.nameEn}
               rounded="none"
-              className="aspect-square"
             />
           </div>
         </div>
@@ -173,7 +172,7 @@ export default function ProductDetailPage() {
                 type="number"
                 value={qty}
                 onChange={(e) => setQty(Math.max(1, Number(e.target.value) || 1))}
-                className="h-10 w-12 border-0 bg-transparent text-center text-sm focus:outline-none"
+                className="h-10 w-12 border-0 bg-transparent text-center text-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 disabled={oos}
               />
               <button

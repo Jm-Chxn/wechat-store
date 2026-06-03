@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { Sparkles, ArrowRight, Soup } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -38,14 +39,11 @@ export function Hero() {
         </div>
         <div className="relative">
           <div className="relative ml-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-[2.5rem] border-4 border-surface shadow-lift">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="https://images.unsplash.com/photo-1604908554049-0192fd92e4b5?w=900&h=1100&fit=crop&auto=format&q=70"
               alt="Community shared meals"
-              className="h-full w-full object-cover img-fallback"
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
+              fill
+              className="object-cover img-fallback"
             />
             <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 bg-gradient-to-t from-black/60 to-transparent p-5 text-white">
               <span className="grid h-10 w-10 place-items-center rounded-full bg-amber-soft/90 text-[#5a3a08]">

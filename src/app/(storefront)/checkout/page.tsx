@@ -505,7 +505,7 @@ export default function CheckoutPage() {
           >
             {detailed.map(({ product, quantity }) => (
               <li key={product.id} className="flex items-center gap-3">
-                <div className="h-12 w-12 shrink-0 overflow-hidden rounded-xl">
+                <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-xl">
                   <ProductImage src={product.imageUrl} alt={product.nameEn} rounded="xl" />
                 </div>
                 <div className="flex-1 text-sm">
