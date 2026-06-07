@@ -29,6 +29,7 @@ export default function AccountPage() {
   const signingOutRef = React.useRef(false);
   const signOutInFlightRef = React.useRef(false);
   const [signingOut, setSigningOut] = React.useState(false);
+  const [avatarError, setAvatarError] = React.useState(false);
 
   React.useEffect(() => {
     if (!isReady) return;
@@ -75,7 +76,6 @@ export default function AccountPage() {
   }
 
   const displayName = user.fullName || user.name;
-  const [avatarError, setAvatarError] = React.useState(false);
 
   return (
     <div className="container py-8">
