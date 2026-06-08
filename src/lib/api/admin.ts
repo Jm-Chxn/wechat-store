@@ -66,4 +66,6 @@ export const adminApi = {
   stats: () => api.get<AdminStatsPayload>("/api/v1/admin/stats", { timeoutMs: 15000 }),
   updateOrderStatus: (id: string, status: AdminOrder["status"]) =>
     api.patch<AdminOrder>(`/api/v1/admin/orders/${encodeURIComponent(id)}`, { status }),
+  deleteOrder: (id: string) =>
+    api.delete(`/api/v1/admin/orders/${encodeURIComponent(id)}`),
 };

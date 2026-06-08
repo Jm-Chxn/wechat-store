@@ -36,7 +36,7 @@ export function AdminPageHeader({
         )}
       </div>
       {children && (
-        <div className="flex items-center gap-2">{children}</div>
+        <div className="flex flex-wrap items-center gap-2">{children}</div>
       )}
     </header>
   );

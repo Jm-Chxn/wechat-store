@@ -149,7 +149,7 @@ export default function AccountPage() {
             </Button>
             {user.role === "admin" && (
               <Button asChild variant="default" className="justify-start">
-                <Link href="/admin">
+                <Link href="/admin" target="_blank" rel="noopener noreferrer">
                   <ShieldCheck className="h-4 w-4" />
                   {t("account.adminPanel")}
                 </Link>

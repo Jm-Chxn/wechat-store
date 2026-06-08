@@ -80,7 +80,7 @@ export default function AdminUsersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("admin.customersSearchPlaceholder")}
-            className="w-72 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+            className="w-48 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none sm:w-72"
           />
         </div>
         <select
@@ -108,27 +108,18 @@ export default function AdminUsersPage() {
       )}
 
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <table className="w-full table-fixed border-collapse text-sm">
-          <colgroup>
-            <col className="w-56" />
-            <col className="w-36" />
-            <col className="w-36" />
-            <col className="w-44" />
-            <col className="w-44" />
-            <col className="w-24" />
-            <col className="w-28" />
-            <col className="w-32" />
-          </colgroup>
+        <div className="overflow-x-auto">
+        <table className="w-full table-auto border-collapse text-sm">
           <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-4 py-2.5">{t("admin.userColCustomer")}</th>
-              <th className="px-4 py-2.5">{t("admin.userColWeChat")}</th>
-              <th className="px-4 py-2.5">{t("admin.userColEmail")}</th>
-              <th className="px-4 py-2.5">{t("admin.userColPhone")}</th>
+              <th className="hidden px-4 py-2.5 md:table-cell">{t("admin.userColWeChat")}</th>
+              <th className="hidden px-4 py-2.5 sm:table-cell">{t("admin.userColEmail")}</th>
+              <th className="hidden px-4 py-2.5 lg:table-cell">{t("admin.userColPhone")}</th>
               <th className="px-4 py-2.5">{t("admin.userColRole")}</th>
               <th className="px-4 py-2.5 text-right">{t("admin.userColOrders")}</th>
               <th className="px-4 py-2.5 text-right">{t("admin.userColTotalSpent")}</th>
-              <th className="px-4 py-2.5">{t("admin.userColLastSeen")}</th>
+              <th className="hidden px-4 py-2.5 lg:table-cell">{t("admin.userColLastSeen")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -176,13 +167,13 @@ export default function AdminUsersPage() {
                     </div>
                   </div>
                 </td>
-                <td className="truncate px-4 py-3 text-xs text-slate-700">
+                <td className="hidden truncate px-4 py-3 text-xs text-slate-700 md:table-cell">
                   {u.wechatId ?? <span className="text-slate-400">—</span>}
                 </td>
-                <td className="truncate px-4 py-3 text-xs text-slate-700">
+                <td className="hidden truncate px-4 py-3 text-xs text-slate-700 sm:table-cell">
                   {u.email ?? <span className="text-slate-400">—</span>}
                 </td>
-                <td className="px-4 py-3 font-mono text-xs text-slate-700">
+                <td className="hidden px-4 py-3 font-mono text-xs text-slate-700 lg:table-cell">
                   {u.phone ?? <span className="text-slate-400">—</span>}
                 </td>
                 <td className="px-4 py-3">
@@ -202,13 +193,14 @@ export default function AdminUsersPage() {
                 <td className="px-4 py-3 text-right tabular-nums font-medium text-slate-900">
                   {formatPrice(u.totalSpentCents)}
                 </td>
-                <td className="px-4 py-3 text-xs text-slate-500">
+                <td className="hidden px-4 py-3 text-xs text-slate-500 lg:table-cell">
                   {u.lastSeenAt ? formatDate(u.lastSeenAt) : "—"}
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
+        </div>
       </div>
 
       {selected && (

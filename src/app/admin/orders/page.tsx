@@ -1,7 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { Search, Filter, X, Phone, Mail, Calendar, Package, MessageCircle } from "lucide-react";
+import { Search, Filter, X, Phone, Mail, Calendar, Package, MessageCircle, Trash2 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { StatusPill } from "@/components/admin/AdminShell";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { adminApi, type AdminOrder } from "@/lib/api/admin";
@@ -28,6 +37,7 @@ export default function AdminOrdersPage() {
   const [search, setSearch] = React.useState("");
   const [statusFilter, setStatusFilter] = React.useState<"ALL" | AdminOrder["status"]>("ALL");
   const [selected, setSelected] = React.useState<AdminOrder | null>(null);
+  const [confirm, setConfirm] = React.useState<AdminOrder | null>(null);
 
   const load = React.useCallback(async () => {
     try {
@@ -75,6 +85,21 @@ export default function AdminOrdersPage() {
     });
   }, [orders, search, statusFilter]);
 
+  const onDelete = async (order: AdminOrder) => {
+    try {
+      await adminApi.deleteOrder(order.id);
+      setOrders((cur) => cur.filter((o) => o.id !== order.id));
+      if (selected?.id === order.id) setSelected(null);
+      setConfirm(null);
+      toast({ title: t("admin.orderDeleted"), description: order.id });
+    } catch (err) {
+      toast({
+        title: t("admin.ordersLoadError"),
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  };
+
   const onChangeStatus = async (id: string, status: AdminOrder["status"]) => {
     try {
       const updated = await adminApi.updateOrderStatus(id, status);
@@ -102,7 +127,7 @@ export default function AdminOrdersPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder={t("admin.ordersSearchPlaceholder")}
-            className="w-72 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+            className="w-48 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none sm:w-72"
           />
         </div>
         <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm">
@@ -129,38 +154,31 @@ export default function AdminOrdersPage() {
       )}
 
       <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200">
-        <table className="w-full table-fixed border-collapse text-sm">
-          <colgroup>
-            <col className="w-44" />
-            <col className="w-48" />
-            <col className="w-40" />
-            <col />
-            <col className="w-28" />
-            <col className="w-32" />
-            <col className="w-36" />
-          </colgroup>
+        <div className="overflow-x-auto">
+        <table className="w-full table-auto border-collapse text-sm">
           <thead className="bg-slate-50 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500">
             <tr>
               <th className="px-4 py-2.5">{t("admin.orderColOrder")}</th>
               <th className="px-4 py-2.5">{t("admin.orderColCustomer")}</th>
-              <th className="px-4 py-2.5">{t("admin.orderColPhone")}</th>
-              <th className="px-4 py-2.5">{t("admin.orderColItems")}</th>
+              <th className="hidden px-4 py-2.5 sm:table-cell">{t("admin.orderColPhone")}</th>
+              <th className="hidden px-4 py-2.5 md:table-cell">{t("admin.orderColItems")}</th>
               <th className="px-4 py-2.5 text-right">{t("admin.orderColTotal")}</th>
               <th className="px-4 py-2.5">{t("admin.ordersStatus")}</th>
-              <th className="px-4 py-2.5">{t("admin.orderColPlaced")}</th>
+              <th className="hidden px-4 py-2.5 lg:table-cell">{t("admin.orderColPlaced")}</th>
+              <th className="px-4 py-2.5" />
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {loading && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                   {t("common.loading")}
                 </td>
               </tr>
             )}
             {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-sm text-slate-500">
+                <td colSpan={8} className="px-4 py-12 text-center text-sm text-slate-500">
                   {t("admin.ordersNoMatch")}
                 </td>
               </tr>
@@ -185,15 +203,15 @@ export default function AdminOrdersPage() {
                       <div className="text-xs text-slate-500">{t("admin.wechatId", { id: o.customerWechatId })}</div>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top">
+                  <td className="hidden px-4 py-3 align-top sm:table-cell">
                     {o.customerPhone ? (
                       <span className="font-mono text-xs text-slate-700">{o.customerPhone}</span>
                     ) : (
                       <span className="text-xs text-slate-400">—</span>
                     )}
                   </td>
-                  <td className="px-4 py-3 align-top">
-                    <div className="truncate text-slate-700">
+                  <td className="hidden px-4 py-3 align-top md:table-cell">
+                    <div className="max-w-[200px] truncate text-slate-700">
                       {o.items.slice(0, 2).map((i, idx) => (
                         <span key={i.productId + idx}>
                           {idx > 0 && ", "}
@@ -211,14 +229,25 @@ export default function AdminOrdersPage() {
                   <td className="px-4 py-3 align-top">
                     <StatusPill status={o.status} />
                   </td>
-                  <td className="px-4 py-3 align-top text-xs text-slate-500">
+                  <td className="hidden px-4 py-3 align-top text-xs text-slate-500 lg:table-cell">
                     {o.createdAt ? formatDate(o.createdAt) : "—"}
+                  </td>
+                  <td className="px-2 py-3 align-top">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setConfirm(o); }}
+                      className="grid h-7 w-7 place-items-center rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600"
+                      aria-label={t("admin.delete")}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {selected && (
@@ -228,6 +257,31 @@ export default function AdminOrdersPage() {
           onChangeStatus={(status) => onChangeStatus(selected.id, status)}
         />
       )}
+
+      <Dialog open={!!confirm} onOpenChange={(v) => !v && setConfirm(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("admin.confirmDeleteOrder")}</DialogTitle>
+            <DialogDescription>
+              <code className="font-mono text-xs">{confirm?.id}</code>
+              {" — "}
+              {t("admin.confirmDeleteOrderBody")}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirm(null)}>
+              {t("admin.cancel")}
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => confirm && onDelete(confirm)}
+            >
+              <Trash2 className="h-4 w-4" />
+              {t("admin.delete")}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
