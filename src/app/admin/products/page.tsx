@@ -52,7 +52,7 @@ export default function AdminProductsPage() {
 
   const onSave = async (p: Product) => {
     const isCreate = !products.find((x) => x.id === p.id);
-    const next = await upsertProduct(p);
+    const next = await upsertProduct(p, isCreate);
     setProducts(next);
     logActivity(
       isCreate ? "ADMIN_PRODUCT_CREATE" : "ADMIN_PRODUCT_UPDATE",

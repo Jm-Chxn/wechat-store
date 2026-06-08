@@ -199,7 +199,7 @@ export async function getProduct(slugOrId: string): Promise<Product | undefined>
   }
 }
 
-export async function upsertProduct(p: Product): Promise<Product[]> {
+export async function upsertProduct(p: Product, isNew: boolean): Promise<Product[]> {
   const payload = {
     id: p.id,
     slug: p.slug,
@@ -217,10 +217,10 @@ export async function upsertProduct(p: Product): Promise<Product[]> {
     imageUrl: p.imageUrl,
     categorySlug: p.categorySlug,
   };
-  if (p.id) {
-    await api.patch<BackendProduct>(`/api/v1/admin/products/${encodeURIComponent(p.id)}`, payload);
-  } else {
+  if (isNew) {
     await api.post<BackendProduct>("/api/v1/admin/products", payload);
+  } else {
+    await api.patch<BackendProduct>(`/api/v1/admin/products/${encodeURIComponent(p.id)}`, payload);
   }
   return listProducts();
 }
