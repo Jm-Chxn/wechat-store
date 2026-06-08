@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Search, Filter, X, Phone, Mail, Calendar, Package, MessageCircle } from "lucide-react";
 import { StatusPill } from "@/components/admin/AdminShell";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { adminApi, type AdminOrder } from "@/lib/api/admin";
 import { formatDate, formatPrice } from "@/lib/utils";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -89,47 +90,36 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-5">
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-            {t("admin.orders")}
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-            {t("admin.ordersPageTitle")}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {loading
-              ? t("common.loading")
-              : t("admin.ordersCount", { n: filtered.length, total: orders.length })}
-          </p>
+      <AdminPageHeader
+        section={t("admin.orders")}
+        title={t("admin.ordersPageTitle")}
+        subtitle={loading ? t("common.loading") : t("admin.ordersCount", { n: filtered.length, total: orders.length })}
+      >
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t("admin.ordersSearchPlaceholder")}
+            className="w-72 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
+          />
         </div>
-        <div className="flex items-center gap-2">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-            <input
-              type="search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder={t("admin.ordersSearchPlaceholder")}
-              className="w-72 rounded-lg border border-slate-200 bg-white py-1.5 pl-8 pr-3 text-sm placeholder:text-slate-400 focus:border-slate-400 focus:outline-none"
-            />
-          </div>
-          <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm">
-            <Filter className="h-3.5 w-3.5 text-slate-500" />
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
-              className="bg-transparent text-slate-700 focus:outline-none"
-              aria-label="Filter by status"
-            >
-              <option value="ALL">{t("admin.ordersFilterAllStatuses")}</option>
-              {STATUSES.map((s) => (
-                <option key={s} value={s}>{t(STATUS_LABEL_KEY[s])}</option>
-              ))}
-            </select>
-          </div>
+        <div className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-sm">
+          <Filter className="h-3.5 w-3.5 text-slate-500" />
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as typeof statusFilter)}
+            className="bg-transparent text-slate-700 focus:outline-none"
+            aria-label="Filter by status"
+          >
+            <option value="ALL">{t("admin.ordersFilterAllStatuses")}</option>
+            {STATUSES.map((s) => (
+              <option key={s} value={s}>{t(STATUS_LABEL_KEY[s])}</option>
+            ))}
+          </select>
         </div>
-      </header>
+      </AdminPageHeader>
 
       {error && (
         <div className="rounded-xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">

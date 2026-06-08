@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { AdminStatCard, StatusPill } from "@/components/admin/AdminShell";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { adminApi, type AdminOrder, type AdminStatsPayload } from "@/lib/api/admin";
 import { categoryBySlug } from "@/data/categories";
 import { formatPrice } from "@/lib/utils";
@@ -43,7 +44,12 @@ export default function AdminDashboardPage() {
 
   if (!stats) {
     return (
-      <div className="space-y-3">
+      <div className="space-y-5">
+        <AdminPageHeader
+          section={t("admin.overview")}
+          title={t("admin.welcomeBack")}
+          subtitle={t("admin.dashboardSubtitle")}
+        />
         {error && (
           <div className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
             {t("admin.statsError")}
@@ -54,7 +60,6 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
-        <div className="h-24 animate-pulse rounded-xl bg-gray-200" />
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[0, 1, 2, 3].map((i) => (
             <div key={i} className="h-24 animate-pulse rounded-xl bg-gray-200" />
@@ -67,20 +72,12 @@ export default function AdminDashboardPage() {
   const topCat = stats.topCategorySlug ? categoryBySlug(stats.topCategorySlug) : null;
 
   return (
-    <div className="space-y-6">
-      <header className="flex items-end justify-between">
-        <div>
-          <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
-            {t("admin.overview")}
-          </div>
-          <h1 className="mt-1 text-2xl font-semibold text-slate-900">
-            {t("admin.welcomeBack")}
-          </h1>
-          <p className="mt-1 text-sm text-slate-600">
-            {t("admin.dashboardSubtitle")}
-          </p>
-        </div>
-      </header>
+    <div className="space-y-5">
+      <AdminPageHeader
+        section={t("admin.overview")}
+        title={t("admin.welcomeBack")}
+        subtitle={t("admin.dashboardSubtitle")}
+      />
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <AdminStatCard

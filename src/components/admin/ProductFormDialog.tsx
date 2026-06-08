@@ -91,6 +91,9 @@ export function ProductFormDialog({
           <DialogDescription>{t("brand.tagline")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-4">
+          <p className="text-xs text-muted-foreground">
+            {t("admin.requiredNote")}
+          </p>
           <div className="space-y-1.5">
             <Label>{t("admin.productImageUrl")}</Label>
             <ImageUploadField
@@ -101,7 +104,7 @@ export function ProductFormDialog({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{t("admin.productNameEn")}</Label>
+              <Label>{t("admin.productNameEn")} <span className="text-primary">*</span></Label>
               <Input
                 required
                 value={draft.nameEn}
@@ -109,7 +112,7 @@ export function ProductFormDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("admin.productNameZh")}</Label>
+              <Label>{t("admin.productNameZh")} <span className="text-primary">*</span></Label>
               <Input
                 required
                 value={draft.nameZh}
@@ -133,7 +136,7 @@ export function ProductFormDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("admin.productPrice")}</Label>
+              <Label>{t("admin.productPrice")} <span className="text-primary">*</span></Label>
               <Input
                 required
                 type="number"

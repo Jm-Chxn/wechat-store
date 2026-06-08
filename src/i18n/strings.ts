@@ -16,6 +16,7 @@ export const dictionary = {
   "nav.categories": { en: "Categories", zh: "分类" },
   "nav.cart": { en: "Cart", zh: "购物车" },
   "nav.account": { en: "Orders", zh: "订单" },
+  "nav.myAccount": { en: "Account", zh: "账户" },
   "nav.signIn": { en: "Sign In", zh: "登录" },
   "nav.signOut": { en: "Sign Out", zh: "退出登录" },
   "nav.admin": { en: "Admin", zh: "管理后台" },
@@ -354,6 +355,17 @@ export const dictionary = {
   "admin.subtotal": { en: "Subtotal", zh: "小计" },
   "admin.deliveryFee": { en: "Delivery", zh: "运费" },
   "admin.totalLabel": { en: "Total", zh: "合计" },
+
+  // products page
+  "admin.productsPageTitle": { en: "All products", zh: "全部商品" },
+  "admin.productsCount": { en: "{n} of {total} products", zh: "{n} / {total} 件商品" },
+  "admin.productsSearchPlaceholder": { en: "Search by name…", zh: "搜索商品名称…" },
+  "admin.productsFilterAll": { en: "All categories", zh: "全部分类" },
+  "admin.noProductsMatch": { en: "No products match.", zh: "没有符合的商品。" },
+  "admin.requiredNote": { en: "Fields marked with * are required", zh: "标有 * 的字段为必填项" },
+
+  // activity page
+  "admin.activityCount": { en: "{n} events", zh: "{n} 条事件" },
 
   // customers (users) page
   "admin.customersSection": { en: "Customers", zh: "客户" },
