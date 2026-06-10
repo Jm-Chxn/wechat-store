@@ -25,7 +25,7 @@ export function AdminPageHeader({
   children?: React.ReactNode;
 }) {
   return (
-    <header className="flex flex-wrap items-end justify-between gap-3">
+    <header className="flex flex-wrap items-end justify-between gap-3 border-b border-slate-100 pb-4">
       <div>
         <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">
           {section}

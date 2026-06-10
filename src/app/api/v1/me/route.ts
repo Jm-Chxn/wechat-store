@@ -17,7 +17,7 @@ export const GET = withRoute("GET /api/v1/me", async (request: NextRequest) => {
   const [profileRes, authUserRes] = await Promise.all([
     supabase
       .from("profiles")
-      .select("nickname, avatar_url, role, full_name, wechat_id")
+      .select("nickname, avatar_url, role, full_name, wechat_id, phone")
       .eq("user_id", userId)
       .single(),
     supabase.auth.admin.getUserById(userId),
@@ -44,12 +44,12 @@ export const GET = withRoute("GET /api/v1/me", async (request: NextRequest) => {
       (profile?.wechat_id as string | null) ??
       (typeof meta?.wechat_id === "string" ? meta.wechat_id : null),
     email: authUser?.email ?? null,
-    phone: authUser?.phone ?? null,
+    phone: (profile?.phone as string | null) ?? authUser?.phone ?? null,
   });
 });
 
 /**
- * PATCH /api/v1/me — update profile (full_name, wechat_id) and/or auth phone.
+ * PATCH /api/v1/me — update profile (full_name, wechat_id, phone) and/or auth data.
  */
 export const PATCH = withRoute("PATCH /api/v1/me", async (request: NextRequest) => {
   const authResult = await requireAuth(request);
@@ -66,12 +66,14 @@ export const PATCH = withRoute("PATCH /api/v1/me", async (request: NextRequest) 
   if (
     body.fullName !== undefined ||
     body.wechatId !== undefined ||
-    body.nickname !== undefined
+    body.nickname !== undefined ||
+    body.phone !== undefined
   ) {
     const upsert: Record<string, unknown> = { user_id: userId };
     if (body.fullName !== undefined) upsert.full_name = body.fullName;
     if (body.wechatId !== undefined) upsert.wechat_id = body.wechatId;
     if (body.nickname !== undefined) upsert.nickname = body.nickname;
+    if (body.phone !== undefined) upsert.phone = body.phone;
 
     const { error } = await supabase.from("profiles").upsert(upsert, {
       onConflict: "user_id",
@@ -82,19 +84,9 @@ export const PATCH = withRoute("PATCH /api/v1/me", async (request: NextRequest) 
     }
   }
 
-  if (body.phone !== undefined && typeof body.phone === "string") {
-    const { error } = await supabase.auth.admin.updateUserById(userId, {
-      phone: body.phone,
-    });
-    if (error) {
-      console.error("[PATCH /api/v1/me] phone update failed:", error);
-      return apiError(500, error.message);
-    }
-  }
-
   const { data: profile } = await supabase
     .from("profiles")
-    .select("nickname, avatar_url, role, full_name, wechat_id")
+    .select("nickname, avatar_url, role, full_name, wechat_id, phone")
     .eq("user_id", userId)
     .single();
 
@@ -109,6 +101,6 @@ export const PATCH = withRoute("PATCH /api/v1/me", async (request: NextRequest) 
     fullName: (profile?.full_name as string | null) ?? null,
     wechatId: (profile?.wechat_id as string | null) ?? null,
     email: authUser?.email ?? null,
-    phone: authUser?.phone ?? null,
+    phone: (profile?.phone as string | null) ?? authUser?.phone ?? null,
   });
 });

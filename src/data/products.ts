@@ -41,7 +41,7 @@ export const products: Product[] = [
     stockCount: 24,
     isNew: false,
     dietaryTags: [],
-    imageUrl: img("1602470521006-e4f1f7d05d1f"),
+    imageUrl: img("1588347818036-558601350947"),
     categorySlug: "fresh-meat-poultry",
   },
   {
@@ -145,7 +145,7 @@ export const products: Product[] = [
     stockCount: 15,
     isNew: true,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1626078436900-0d77c4f55d27"),
+    imageUrl: img("1546069901-ba9599a7e63c"),
     categorySlug: "eggs-dairy",
   },
   {
@@ -162,7 +162,7 @@ export const products: Product[] = [
     stockCount: 6,
     isNew: false,
     dietaryTags: [],
-    imageUrl: img("1597306625822-2ad9d5dd7f63"),
+    imageUrl: img("1498654077810-12c21d4d6dc3"),
     categorySlug: "eggs-dairy",
   },
   {
@@ -285,7 +285,7 @@ export const products: Product[] = [
     stockCount: 32,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1625938145744-8b6ddef1e8a4"),
+    imageUrl: img("1563245372-f21724e3856d"),
     categorySlug: "noodles-wrappers",
   },
   {
@@ -302,7 +302,7 @@ export const products: Product[] = [
     stockCount: 27,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1583224994076-ae67528270d8"),
+    imageUrl: img("1496116218417-1a781b1c416c"),
     categorySlug: "noodles-wrappers",
   },
   {
@@ -355,7 +355,7 @@ export const products: Product[] = [
     stockCount: 40,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1602080858428-57a6c47b6692"),
+    imageUrl: img("1571091718767-18b5b1457add"),
     categorySlug: "pantry-sauces",
   },
   {
@@ -372,7 +372,7 @@ export const products: Product[] = [
     stockCount: 24,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1593441435252-15b3a803d121"),
+    imageUrl: img("1512621776951-a57141f2eefd"),
     categorySlug: "pantry-sauces",
   },
   {
@@ -389,7 +389,7 @@ export const products: Product[] = [
     stockCount: 18,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1576073719676-aa9577e9b3f5"),
+    imageUrl: img("1540189549336-e6e99c3679fe"),
     categorySlug: "pantry-sauces",
   },
   {
@@ -406,7 +406,7 @@ export const products: Product[] = [
     stockCount: 33,
     isNew: true,
     dietaryTags: ["VEGAN", "SPICY"],
-    imageUrl: img("1601001810915-0a9c1c2c0a37"),
+    imageUrl: img("1565299585323-38d6b0865b47"),
     categorySlug: "pantry-sauces",
   },
   {
@@ -423,7 +423,7 @@ export const products: Product[] = [
     stockCount: 7,
     isNew: false,
     dietaryTags: ["VEGAN", "SPICY"],
-    imageUrl: img("1556909114-44e3e9399a2c"),
+    imageUrl: img("1540420773420-3366772f4999"),
     categorySlug: "pantry-sauces",
   },
 
@@ -459,7 +459,7 @@ export const products: Product[] = [
     stockCount: 21,
     isNew: true,
     dietaryTags: [],
-    imageUrl: img("1567019994-92b5e2dde787"),
+    imageUrl: img("1551462147-ff29053bfc14"),
     categorySlug: "frozen-foods",
   },
   {
@@ -476,7 +476,7 @@ export const products: Product[] = [
     stockCount: 15,
     isNew: false,
     dietaryTags: [],
-    imageUrl: img("1604908554049-0192fd92e4b5"),
+    imageUrl: img("1567620905732-2d1ec7ab7445"),
     categorySlug: "frozen-foods",
   },
   {
@@ -510,7 +510,7 @@ export const products: Product[] = [
     stockCount: 0,
     isNew: false,
     dietaryTags: ["VEGETARIAN"],
-    imageUrl: img("1621241441637-46b46f5d3b8e"),
+    imageUrl: img("1490645935967-10de6ba17061"),
     categorySlug: "frozen-foods",
   },
 
@@ -546,7 +546,7 @@ export const products: Product[] = [
     stockCount: 22,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1620920464105-7e54bf65fde7"),
+    imageUrl: img("1504674900247-0877df9cc836"),
     categorySlug: "tofu-soy",
   },
   {
@@ -563,7 +563,7 @@ export const products: Product[] = [
     stockCount: 6,
     isNew: true,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1623211188-c30dafda7be8"),
+    imageUrl: img("1606755456206-b25206cde27e"),
     categorySlug: "tofu-soy",
   },
   {
@@ -633,7 +633,7 @@ export const products: Product[] = [
     stockCount: 36,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1582049165166-1f2a8b3f4f0c"),
+    imageUrl: img("1556679343-c7306c1976bc"),
     categorySlug: "beverages",
   },
   {
@@ -650,7 +650,7 @@ export const products: Product[] = [
     stockCount: 24,
     isNew: true,
     dietaryTags: ["VEGAN", "GLUTEN_FREE"],
-    imageUrl: img("1623204542022-b8e1cf85aabd"),
+    imageUrl: img("1547592166-23ac45744acd"),
     categorySlug: "beverages",
   },
   {
@@ -667,7 +667,7 @@ export const products: Product[] = [
     stockCount: 28,
     isNew: false,
     dietaryTags: ["VEGAN"],
-    imageUrl: img("1622543925917-44e6dc2b8c7b"),
+    imageUrl: img("1564890369478-c89ca6d9cde9"),
     categorySlug: "beverages",
   },
   {
@@ -684,7 +684,7 @@ export const products: Product[] = [
     stockCount: 22,
     isNew: false,
     dietaryTags: ["VEGAN", "GLUTEN_FREE"],
-    imageUrl: img("1582711012124-14a2dca7bb15"),
+    imageUrl: img("1488477181946-6428a0291777"),
     categorySlug: "beverages",
   },
 ];
