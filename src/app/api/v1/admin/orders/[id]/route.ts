@@ -1,7 +1,7 @@
 import { type NextRequest } from "next/server";
 import { requireAdmin } from "@/app/api/_lib/auth";
 import { createAdminClient } from "@/app/api/_lib/supabase-admin";
-import { apiError, ok } from "@/app/api/_lib/response";
+import { apiError, noContent, ok } from "@/app/api/_lib/response";
 import { mapOrder } from "@/app/api/_lib/mappers";
 import { withRoute } from "@/app/api/_lib/route-wrapper";
 
@@ -57,5 +57,33 @@ export const PATCH = withRoute(
     return ok(
       mapOrder(order as Record<string, unknown>, (items ?? []) as Record<string, unknown>[]),
     );
+  },
+);
+
+export const DELETE = withRoute(
+  "DELETE /api/v1/admin/orders/[id]",
+  async (request: NextRequest, ctx: Ctx) => {
+    const { id } = await ctx.params;
+    const authResult = await requireAdmin(request);
+    if (authResult instanceof Response) return authResult;
+
+    const supabase = createAdminClient();
+
+    const { error: itemsError } = await supabase
+      .from("order_items")
+      .delete()
+      .eq("order_id", id);
+    if (itemsError) {
+      console.error("[admin/orders DELETE] items delete error:", itemsError);
+      return apiError(500, itemsError.message);
+    }
+
+    const { error } = await supabase.from("orders").delete().eq("id", id);
+    if (error) {
+      console.error("[admin/orders DELETE] order delete error:", error);
+      return apiError(500, error.message);
+    }
+
+    return noContent();
   },
 );

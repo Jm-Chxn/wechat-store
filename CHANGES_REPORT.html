@@ -1,0 +1,1411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tuangou Platform — Code Audit &amp; Bug Fix Report</title>
+  <style>
+    /* ─── Reset & Base ─────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --brand:    #D94F2B;
+      --brand-dk: #b83e22;
+      --crit:     #dc2626;
+      --high:     #ea580c;
+      --med:      #d97706;
+      --low:      #6b7280;
+      --text:     #1a1a1a;
+      --muted:    #4b5563;
+      --border:   #d1d5db;
+      --bg-alt:   #f9fafb;
+      --code-bg:  #f3f4f6;
+      --radius:   4px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                   "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+      color: var(--text);
+      background: #ffffff;
+      line-height: 1.65;
+    }
+
+    /* ─── Layout ───────────────────────────────────────────────────────────── */
+    .page-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem;
+    }
+
+    /* ─── Cover Page ───────────────────────────────────────────────────────── */
+    .cover {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 4rem 2rem;
+      border-bottom: 4px solid var(--brand);
+      page-break-after: always;
+    }
+
+    .cover-logo {
+      width: 72px;
+      height: 72px;
+      background: var(--brand);
+      border-radius: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 2rem;
+      font-size: 2rem;
+      font-weight: 800;
+      color: #fff;
+      letter-spacing: -1px;
+    }
+
+    .cover-eyebrow {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--brand);
+      margin-bottom: 1rem;
+    }
+
+    .cover h1 {
+      font-size: 2.4rem;
+      font-weight: 800;
+      color: var(--text);
+      line-height: 1.2;
+      margin-bottom: 0.6rem;
+      max-width: 650px;
+    }
+
+    .cover-sub {
+      font-size: 1.1rem;
+      color: var(--muted);
+      margin-bottom: 3rem;
+    }
+
+    .cover-meta {
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .cover-meta-row {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .cover-meta-row:last-child { border-bottom: none; }
+
+    .cover-meta-label {
+      width: 160px;
+      min-width: 160px;
+      background: var(--bg-alt);
+      padding: 0.65rem 1rem;
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-right: 1px solid var(--border);
+    }
+
+    .cover-meta-value {
+      padding: 0.65rem 1rem;
+      font-size: 0.9rem;
+      color: var(--text);
+    }
+
+    .cover-badge {
+      display: inline-block;
+      background: var(--brand);
+      color: #fff;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 0.15rem 0.55rem;
+      border-radius: 999px;
+    }
+
+    /* ─── Table of Contents ────────────────────────────────────────────────── */
+    .toc-section {
+      padding: 3rem 0 2rem;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 3rem;
+      page-break-after: always;
+    }
+
+    .toc-section h2 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--brand);
+      margin-bottom: 1.5rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--brand);
+    }
+
+    .toc-list {
+      list-style: none;
+      counter-reset: toc-counter;
+    }
+
+    .toc-list > li {
+      border-bottom: 1px dotted var(--border);
+    }
+
+    .toc-list > li > a {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.55rem 0;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      transition: color 0.15s;
+    }
+
+    .toc-list > li > a:hover { color: var(--brand); }
+
+    .toc-sub {
+      list-style: none;
+      padding-left: 1.25rem;
+      margin-bottom: 0.4rem;
+    }
+
+    .toc-sub li a {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.25rem 0;
+      color: var(--muted);
+      text-decoration: none;
+      font-size: 0.85rem;
+    }
+
+    .toc-sub li a:hover { color: var(--brand); }
+
+    .toc-page {
+      font-size: 0.78rem;
+      color: var(--muted);
+      min-width: 20px;
+      text-align: right;
+    }
+
+    /* ─── Section Headings ─────────────────────────────────────────────────── */
+    .report-section {
+      margin-bottom: 3.5rem;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--brand);
+    }
+
+    .section-number {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      white-space: nowrap;
+    }
+
+    .section-header h2 {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--text);
+    }
+
+    /* ─── Branch Subsections ───────────────────────────────────────────────── */
+    .branch-block {
+      margin-bottom: 3rem;
+      page-break-inside: avoid;
+    }
+
+    .branch-header {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--brand);
+      border-radius: 0 6px 6px 0;
+      padding: 0.85rem 1.1rem;
+      margin-bottom: 1.25rem;
+    }
+
+    .branch-header h3 {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: 0.35rem;
+    }
+
+    .branch-header h3 code {
+      color: var(--brand);
+      background: none;
+      padding: 0;
+      font-size: 1em;
+    }
+
+    .branch-files {
+      font-size: 0.82rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .branch-files strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    /* ─── Issue Cards ──────────────────────────────────────────────────────── */
+    .issue-card {
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      margin-bottom: 1.25rem;
+      overflow: hidden;
+      page-break-inside: avoid;
+    }
+
+    .issue-card-header {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.7rem 1rem;
+      background: #fafafa;
+      border-bottom: 1px solid var(--border);
+      flex-wrap: wrap;
+    }
+
+    .issue-number {
+      font-size: 0.72rem;
+      font-weight: 700;
+      color: var(--muted);
+      background: var(--code-bg);
+      padding: 0.15rem 0.5rem;
+      border-radius: 3px;
+      white-space: nowrap;
+    }
+
+    .issue-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+      color: var(--text);
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .badge {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.2rem 0.6rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      white-space: nowrap;
+    }
+
+    .badge-critical { background: #fee2e2; color: var(--crit); border: 1px solid #fca5a5; }
+    .badge-high     { background: #ffedd5; color: var(--high); border: 1px solid #fdba74; }
+    .badge-medium   { background: #fef3c7; color: var(--med);  border: 1px solid #fcd34d; }
+    .badge-low      { background: #f3f4f6; color: var(--low);  border: 1px solid #d1d5db; }
+
+    .issue-card-body {
+      padding: 0.9rem 1rem 1rem;
+    }
+
+    .issue-row {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      gap: 0.3rem 0.75rem;
+      margin-bottom: 0.5rem;
+      align-items: start;
+    }
+
+    .issue-row:last-child { margin-bottom: 0; }
+
+    .issue-label {
+      font-size: 0.73rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      padding-top: 0.05rem;
+    }
+
+    .issue-text {
+      font-size: 0.875rem;
+      color: var(--text);
+      line-height: 1.55;
+    }
+
+    /* ─── Prose ────────────────────────────────────────────────────────────── */
+    p {
+      margin-bottom: 0.9rem;
+      font-size: 0.94rem;
+      color: var(--text);
+    }
+
+    p:last-child { margin-bottom: 0; }
+
+    h4 {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin: 1.4rem 0 0.5rem;
+    }
+
+    ul, ol {
+      padding-left: 1.4rem;
+      margin-bottom: 0.9rem;
+    }
+
+    li {
+      font-size: 0.9rem;
+      margin-bottom: 0.3rem;
+      color: var(--text);
+    }
+
+    /* ─── Code ─────────────────────────────────────────────────────────────── */
+    code {
+      font-family: "SFMono-Regular", "Consolas", "Liberation Mono", "Menlo",
+                   "Courier New", monospace;
+      font-size: 0.82em;
+      background: var(--code-bg);
+      color: #374151;
+      padding: 0.1em 0.35em;
+      border-radius: 3px;
+      border: 1px solid #e5e7eb;
+    }
+
+    /* ─── Tables ───────────────────────────────────────────────────────────── */
+    .table-wrap {
+      overflow-x: auto;
+      margin-bottom: 1.5rem;
+      border-radius: 6px;
+      border: 1px solid var(--border);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.855rem;
+    }
+
+    thead {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    thead th {
+      padding: 0.65rem 0.9rem;
+      text-align: left;
+      font-weight: 700;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+    }
+
+    tbody tr:nth-child(even) { background: var(--bg-alt); }
+    tbody tr:nth-child(odd)  { background: #ffffff; }
+
+    tbody tr:hover { background: #f0f0f0; }
+
+    tbody td {
+      padding: 0.6rem 0.9rem;
+      vertical-align: top;
+      border-bottom: 1px solid var(--border);
+      line-height: 1.45;
+    }
+
+    tbody tr:last-child td { border-bottom: none; }
+
+    /* ─── Callout Box ──────────────────────────────────────────────────────── */
+    .callout {
+      background: #fff7ed;
+      border: 1px solid #fed7aa;
+      border-left: 4px solid var(--high);
+      border-radius: 0 6px 6px 0;
+      padding: 0.85rem 1rem;
+      margin: 1.25rem 0;
+      font-size: 0.88rem;
+      color: #7c2d12;
+    }
+
+    .callout-info {
+      background: #eff6ff;
+      border-color: #bfdbfe;
+      border-left-color: #3b82f6;
+      color: #1e3a5f;
+    }
+
+    .callout strong { display: block; margin-bottom: 0.25rem; font-weight: 700; }
+
+    /* ─── Divider ──────────────────────────────────────────────────────────── */
+    hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 2rem 0;
+    }
+
+    /* ─── Footer ───────────────────────────────────────────────────────────── */
+    .report-footer {
+      margin-top: 4rem;
+      padding-top: 1.25rem;
+      border-top: 2px solid var(--border);
+      text-align: center;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+
+    /* ─── Print Styles ──────────────────────────────────────────────────────── */
+    @media print {
+      html { font-size: 11pt; }
+
+      body { background: #fff; }
+
+      .page-wrap { padding: 0 1.2cm 1cm; max-width: 100%; }
+
+      a { text-decoration: none; color: inherit; }
+
+      .cover { min-height: auto; padding: 3cm 1cm; page-break-after: always; }
+
+      .toc-section { page-break-after: always; }
+
+      .report-section { page-break-inside: avoid; }
+
+      .branch-block { page-break-inside: avoid; }
+
+      .issue-card { page-break-inside: avoid; }
+
+      thead { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      .badge { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      .cover-logo { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      .branch-header { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+      tbody tr:nth-child(even) {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      @page {
+        margin: 2cm 1.8cm;
+        size: A4;
+      }
+
+      @page :first {
+        margin: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     COVER PAGE
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="cover">
+  <div class="cover-logo">T</div>
+  <div class="cover-eyebrow">Internal Engineering Documentation</div>
+  <h1>Tuangou Platform — Code Audit &amp; Bug Fix Report</h1>
+  <p class="cover-sub">Tuangou (微团购) E-Commerce Platform</p>
+
+  <div class="cover-meta">
+    <div class="cover-meta-row">
+      <div class="cover-meta-label">Project</div>
+      <div class="cover-meta-value">Tuangou (微团购) E-Commerce Platform</div>
+    </div>
+    <div class="cover-meta-row">
+      <div class="cover-meta-label">Date</div>
+      <div class="cover-meta-value">29 May 2026</div>
+    </div>
+    <div class="cover-meta-row">
+      <div class="cover-meta-label">Target Branch</div>
+      <div class="cover-meta-value"><code>development</code></div>
+    </div>
+    <div class="cover-meta-row">
+      <div class="cover-meta-label">Issues Addressed</div>
+      <div class="cover-meta-value"><span class="cover-badge">30 total</span></div>
+    </div>
+    <div class="cover-meta-row">
+      <div class="cover-meta-label">Authors</div>
+      <div class="cover-meta-value">Tuangou Dev, reh13597</div>
+    </div>
+    <div class="cover-meta-row">
+      <div class="cover-meta-label">Branches</div>
+      <div class="cover-meta-value">
+        <code>fix/auth-profile</code>&nbsp;&nbsp;
+        <code>fix/cart-checkout</code><br/>
+        <code>fix/order-api</code>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+        <code>fix/ui-ux</code>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     PAGE WRAPPER
+════════════════════════════════════════════════════════════════════════════ -->
+<div class="page-wrap">
+
+  <!-- ─── Table of Contents ─────────────────────────────────────────────── -->
+  <div class="toc-section" id="toc">
+    <h2>Table of Contents</h2>
+    <ul class="toc-list">
+      <li>
+        <a href="#section-1">
+          <span>1 &nbsp; Executive Summary</span>
+          <span class="toc-page">2</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section-2">
+          <span>2 &nbsp; Audit Methodology</span>
+          <span class="toc-page">2</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section-3">
+          <span>3 &nbsp; Change Groups</span>
+          <span class="toc-page">3</span>
+        </a>
+        <ul class="toc-sub">
+          <li>
+            <a href="#branch-auth">
+              <span>3.1 &nbsp; Branch: <code>fix/auth-profile</code> — 3 issues</span>
+              <span class="toc-page">3</span>
+            </a>
+          </li>
+          <li>
+            <a href="#branch-cart">
+              <span>3.2 &nbsp; Branch: <code>fix/cart-checkout</code> — 7 issues</span>
+              <span class="toc-page">4</span>
+            </a>
+          </li>
+          <li>
+            <a href="#branch-order">
+              <span>3.3 &nbsp; Branch: <code>fix/order-api</code> — 6 issues</span>
+              <span class="toc-page">6</span>
+            </a>
+          </li>
+          <li>
+            <a href="#branch-ui">
+              <span>3.4 &nbsp; Branch: <code>fix/ui-ux</code> — 6 issues</span>
+              <span class="toc-page">8</span>
+            </a>
+          </li>
+        </ul>
+      </li>
+      <li>
+        <a href="#section-4">
+          <span>4 &nbsp; Files Changed Summary</span>
+          <span class="toc-page">10</span>
+        </a>
+      </li>
+      <li>
+        <a href="#section-5">
+          <span>5 &nbsp; Outstanding Notes</span>
+          <span class="toc-page">11</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 1 — EXECUTIVE SUMMARY
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="report-section" id="section-1">
+    <div class="section-header">
+      <span class="section-number">Section 1</span>
+      <h2>Executive Summary</h2>
+    </div>
+
+    <p>Tuangou (微团购) is a full-stack Chinese group-buying e-commerce platform built on <strong>Next.js 15</strong> (App Router), <strong>Supabase</strong> (PostgreSQL + Auth), and a <strong>Spring Boot</strong> backend. The platform serves a bilingual (English / Simplified Chinese) customer base and supports the complete retail lifecycle: product browsing, cart management, group-buy checkout, delivery and community pickup logistics, order tracking, and an administrative dashboard. Given the platform's transactional nature, correctness and reliability at the API and state management layers are prerequisites for both user trust and operational accuracy.</p>
+
+    <p>A comprehensive code audit was conducted across all areas of the frontend codebase — React providers, Next.js API route handlers, shared utility libraries, page components, and the internationalisation layer. Issues were identified through deep static analysis, examining data-flow correctness, error handling completeness, type safety, and UI/UX consistency. In total, <strong>30 issues</strong> were identified and resolved across four parallel fix branches (<code>fix/auth-profile</code>, <code>fix/cart-checkout</code>, <code>fix/order-api</code>, <code>fix/ui-ux</code>), all of which have been merged into the <code>development</code> branch.</p>
+
+    <p>The changes delivered by this audit improve the platform across four key dimensions: <strong>stability</strong> (eliminating runtime crashes and silent error swallowing), <strong>security</strong> (preventing privilege escalation via DB errors, ensuring price integrity), <strong>correctness</strong> (fixing stale closures, mismatched constants, and type-unsafe casts), and <strong>user experience</strong> (replacing infinite loading states, broken images, and non-functional UI elements with clear, appropriate feedback). No feature additions were made — the scope is strictly repair and hardening of existing functionality.</p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 2 — AUDIT METHODOLOGY
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="report-section" id="section-2">
+    <div class="section-header">
+      <span class="section-number">Section 2</span>
+      <h2>Audit Methodology</h2>
+    </div>
+
+    <p>A deep static analysis was performed across all TypeScript source files in the repository, including React providers, Next.js route handlers, client-side page components, shared library utilities, and the internationalisation system. Each file was read in full, with attention paid to data-flow correctness, error propagation paths, React hook dependency arrays, TypeScript type safety, and consistency between related modules.</p>
+
+    <h4>Severity Classification</h4>
+    <p>Each identified issue was assigned one of four severity levels based on its potential impact:</p>
+    <ul>
+      <li><span class="badge badge-critical">Critical</span> — Can cause data loss, incorrect order processing, runtime crashes, or security vulnerabilities under normal usage conditions.</li>
+      <li><span class="badge badge-high">High</span> — Degrades user experience significantly or can lead to incorrect application state visible to the user.</li>
+      <li><span class="badge badge-medium">Medium</span> — Non-critical functional issues: non-functional UI elements, accessibility gaps, or locale-related display errors.</li>
+      <li><span class="badge badge-low">Low</span> — Code quality, inconsistency, or minor polish issues that do not affect core functionality but reduce maintainability or professionalism.</li>
+    </ul>
+
+    <h4>Parallel Branch Strategy</h4>
+    <p>To allow simultaneous implementation without merge conflicts, the 30 issues were grouped by domain into four non-overlapping fix branches. Each branch targeted a distinct set of source files, ensuring that no two branches modified the same file. The workflow for each branch was: identify and fix issues, commit with descriptive messages, push to remote, open a pull request for review, and merge into <code>development</code>. This approach allowed all four tracks to progress in parallel while preserving a clean, reviewable git history.</p>
+
+    <div class="callout callout-info">
+      <strong>Scope Note</strong>
+      Two files were included in the audit but required no changes: <code>src/app/api/v1/me/route.ts</code> (logic already correct) and <code>src/components/storefront/ProductCard.tsx</code> (already had correct <code>alt</code> text). These are documented in Section 5.
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 3 — CHANGE GROUPS
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="report-section" id="section-3">
+    <div class="section-header">
+      <span class="section-number">Section 3</span>
+      <h2>Change Groups</h2>
+    </div>
+
+    <!-- ── 3.1 fix/auth-profile ──────────────────────────────────────────── -->
+    <div class="branch-block" id="branch-auth">
+      <div class="branch-header">
+        <h3>3.1 &nbsp; Branch: <code>fix/auth-profile</code> &nbsp;—&nbsp; 3 issues fixed</h3>
+        <div class="branch-files">
+          <strong>Files modified:</strong>
+          <code>src/providers/AuthProvider.tsx</code>,
+          <code>src/app/api/_lib/auth.ts</code>
+          <br/>
+          <strong>Files audited (no change needed):</strong>
+          <code>src/app/api/v1/me/route.ts</code>
+        </div>
+      </div>
+
+      <!-- Issue #6 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#6</span>
+          <span class="issue-title">Auth profile load failure invisible to UI</span>
+          <span class="badge badge-critical">Critical</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">When the <code>/api/v1/me</code> profile fetch timed out or threw an error (a 10-second race condition existed), the code silently fell back to a half-populated user object. No error state was exposed to the rest of the application. Users could proceed through the entire checkout flow with missing name, phone number, or delivery address data.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">Silent failures in authentication mean corrupted sessions are indistinguishable from valid ones. Users placing orders without a fully loaded profile creates downstream fulfillment failures and customer support burden.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added <code>profileError: string | null</code> to the <code>AuthContextValue</code> interface and as a React state variable. It is set to <code>"Profile failed to load"</code> on timeout or thrown error, cleared on a successful profile fetch, and cleared on sign-out. Any UI component can now read <code>profileError</code> and surface an appropriate warning.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #12 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#12</span>
+          <span class="issue-title">Profile query errors silently downgrade admins</span>
+          <span class="badge badge-high">High</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">In <code>auth.ts</code>, when the profile database query failed for any reason, the code logged a <code>console.warn</code> and defaulted to <code>role: "user"</code>. A real database error — permission denied, connection timeout — would silently strip an admin of their privileges with no indication of what occurred.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">An administrator could lose access to the admin panel mid-session due to a transient infrastructure issue, causing operational disruption and confusion.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">The code now distinguishes between PostgREST error code <code>PGRST116</code> ("no row found" — expected for brand-new users without a profile row yet; safe to default to <code>"user"</code>) and all other error codes (unexpected — now throws, causing the request to fail with a 500 rather than proceeding with incorrect permissions). A comment documents this distinction for future maintainers.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #24 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#24</span>
+          <span class="issue-title">Unsafe <code>as any</code> cast on WeChat provider type</span>
+          <span class="badge badge-low">Low</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">A <code>provider: 'wechat' as any</code> cast was silencing a TypeScript type error. If Supabase's OAuth provider type definition changed in a future SDK update, the code would still compile but fail silently at runtime.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Replaced with <code>"wechat" as OAuthProvider</code>, where <code>OAuthProvider</code> is derived from <code>Parameters&lt;typeof supabase.auth.signInWithOAuth&gt;[0]["provider"]</code> — a type-safe alias that will surface any future SDK incompatibility at compile time rather than at runtime.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── 3.2 fix/cart-checkout ─────────────────────────────────────────── -->
+    <div class="branch-block" id="branch-cart">
+      <div class="branch-header">
+        <h3>3.2 &nbsp; Branch: <code>fix/cart-checkout</code> &nbsp;—&nbsp; 7 issues fixed</h3>
+        <div class="branch-files">
+          <strong>Files modified:</strong>
+          <code>src/providers/CartProvider.tsx</code>,
+          <code>src/app/(storefront)/cart/page.tsx</code>,
+          <code>src/app/(storefront)/checkout/page.tsx</code>,
+          <code>src/app/api/_lib/cart-helpers.ts</code>,
+          <code>src/app/api/v1/cart/merge/route.ts</code>,
+          <code>src/i18n/strings.ts</code>
+        </div>
+      </div>
+
+      <!-- Issue #1 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#1</span>
+          <span class="issue-title">CartProvider stale closure / circular dependency</span>
+          <span class="badge badge-critical">Critical</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The <code>setQuantity</code> <code>useCallback</code> captured a stale snapshot of the <code>remove</code> callback due to a circular dependency in their respective <code>useCallback</code> dependency arrays. This could cause cart quantity updates to operate on outdated state, resulting in incorrect quantities and data inconsistencies.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">Cart state is the most critical user-facing data in the checkout flow. Stale closures here can lead to orders being placed with wrong quantities — a direct fulfillment and revenue integrity issue.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Refactored <code>setQuantity</code> to inline the remove logic directly, eliminating the circular dependency entirely. Both callbacks now declare only their true, direct dependencies.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #2 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#2</span>
+          <span class="issue-title">Delivery threshold constant never used</span>
+          <span class="badge badge-critical">Critical</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">A <code>DELIVERY_THRESHOLD_CENTS</code> constant (= 15000, representing $150) was defined at the top of the checkout page, but the actual delivery qualification check used a hardcoded literal <code>5000</code> (= $50). The constant and the business logic were entirely inconsistent with each other.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">Users could qualify for delivery at a threshold different from what any documentation or UI messaging implied, causing trust and fulfillment issues.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Replaced the hardcoded <code>5000</code> literal with the <code>DELIVERY_THRESHOLD_CENTS</code> constant so the defined value is used consistently throughout the checkout page.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #5 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#5</span>
+          <span class="issue-title">Cart merge race condition swallows all errors</span>
+          <span class="badge badge-critical">Critical</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">In <code>cart-helpers.ts</code>, when a concurrent insert caused a unique constraint violation, the error was caught and treated as safe to ignore. However, the code did not verify the error was specifically a PostgreSQL <code>23505</code> (unique violation) — any error code was silently swallowed.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">A real failure such as a permission error or connection drop would be treated as a benign race condition, causing silent cart data loss with no feedback to the user or caller.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added an explicit check <code>error.code === "23505"</code> before treating the conflict as safe to ignore. All other error codes are now re-thrown. A comment documents the <code>23505 = unique_violation</code> distinction for future maintainers.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #10 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#10</span>
+          <span class="issue-title">Cart merge silently drops invalid items</span>
+          <span class="badge badge-high">High</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">During guest-to-user cart merge, items with a missing <code>productId</code> or a <code>quantity</code> less than 1 were silently skipped. Users would lose cart items with no indication that anything had gone wrong.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Invalid items are now collected into a <code>skippedItems</code> array and included in the API response as <code>&#123; merged: [...], skipped: [...] &#125;</code>. The client layer can inspect the response and surface an appropriate warning to the user when items are skipped.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #11 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#11</span>
+          <span class="issue-title">Whitespace-only addresses pass checkout validation</span>
+          <span class="badge badge-high">High</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">Address field validation checked <code>!address.line1</code>, but a string consisting entirely of spaces (e.g. <code>"&nbsp;&nbsp;&nbsp;"</code>) would pass this check, allowing orders with effectively blank delivery addresses to be submitted.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">All address field checks updated to use <code>.trim()</code>: <code>!address.line1.trim()</code>, <code>!address.city.trim()</code>, and so on across all required address fields.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #14 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#14</span>
+          <span class="issue-title">Promo code input is completely non-functional</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">A promo code input field and "Apply" button existed in the cart page but were wired to do nothing — state was set on input but was never validated against a backend or applied to the cart total.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">Users attempting to enter promo codes received no feedback and could not understand why their code was not working, creating frustration and support requests.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">The promo code input, Apply button, and associated state were removed entirely. A non-functional placeholder feature with no backend integration is worse than the absence of the feature.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #20 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#20</span>
+          <span class="issue-title">Checkout delivery/pickup mode switch gives no feedback</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">When the cart total crossed the delivery qualification threshold and the checkout mode silently switched between delivery and pickup, the community pickup dropdown would reset with no explanation to the user.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added a bilingual contextual info banner: "Your order qualifies for home delivery!" when above threshold, and "Add more items to qualify for home delivery (min. $150)" when below. New i18n keys were added to <code>strings.ts</code> in both English and Chinese.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #21 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#21</span>
+          <span class="issue-title">Hardcoded "Free / 免费" in checkout and cart</span>
+          <span class="badge badge-low">Low</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The delivery fee display used a hardcoded bilingual string literal <code>"Free / 免费"</code> rather than routing through the application's internationalisation system.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added a <code>checkout.deliveryFree</code> key to <code>strings.ts</code> with <code>en: "Free"</code> and <code>zh: "免费"</code>. Both the checkout and cart pages now use <code>t("checkout.deliveryFree")</code>.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── 3.3 fix/order-api ─────────────────────────────────────────────── -->
+    <div class="branch-block" id="branch-order">
+      <div class="branch-header">
+        <h3>3.3 &nbsp; Branch: <code>fix/order-api</code> &nbsp;—&nbsp; 6 issues fixed</h3>
+        <div class="branch-files">
+          <strong>Files modified:</strong>
+          <code>src/app/api/v1/orders/route.ts</code>,
+          <code>src/components/storefront/OrderDetailCard.tsx</code>,
+          <code>src/app/(storefront)/account/orders/page.tsx</code>,
+          <code>src/lib/repository.ts</code>
+        </div>
+      </div>
+
+      <!-- Issue #3 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#3</span>
+          <span class="issue-title">Product force-cast crashes order route</span>
+          <span class="badge badge-critical">Critical</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text"><code>productMap.get(item.productId)!</code> used a non-null assertion operator. If a product was deleted between when the user loaded their cart and when they submitted checkout, this line would throw an unhandled runtime exception, returning a bare 500 with no descriptive error message.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">A deleted product in a user's cart would crash the order creation endpoint entirely. Users would receive a generic server error with no indication of what went wrong or how to resolve it.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Removed the <code>!</code> assertion. Added an explicit null guard: if <code>!product</code>, return <code>apiError(409, "One or more products are no longer available")</code>. This gives the client a structured, actionable error response.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #4 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#4</span>
+          <span class="issue-title">Order route does not validate price types</span>
+          <span class="badge badge-critical">Critical</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text"><code>price_cents</code> values retrieved from the database were used directly in order total calculations without validating that they were positive integers. Floating-point prices would silently truncate; zero or negative prices were not rejected.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added validation immediately after the product existence check: <code>if (!Number.isInteger(product.price_cents) || product.price_cents &lt;= 0) return apiError(400, "Invalid product price data")</code>. This ensures that any data integrity issue in the products table surfaces as a structured API error rather than producing a corrupt order total.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #9 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#9</span>
+          <span class="issue-title">Orders list silently returns empty on API failure</span>
+          <span class="badge badge-high">High</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The <code>listOrders()</code> function in <code>repository.ts</code> caught all errors and returned an empty array <code>[]</code>. When the backend was unreachable, users would see a completely empty order history page with no error indication — they might believe their past orders had been lost.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Removed the catch-and-swallow pattern from <code>listOrders()</code>; the function now re-throws. The calling page (<code>account/orders/page.tsx</code>) was updated to catch the error and display a <code>fetchError</code> state with the message "Could not load orders. Please try again."</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #19 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#19</span>
+          <span class="issue-title">Duplicate React keys in order detail list</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The <code>key</code> prop in the order items list used the pattern <code>${"{order.id}"}-${"{it.productId}"}</code>. If the same product appeared more than once in an order, this would generate duplicate React keys, breaking React's reconciliation algorithm and potentially causing visual glitches.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Updated to <code>${"{order.id}"}-${"{it.productId}"}-${"{index}"}</code>, using the array index as a guaranteed uniqueness tiebreaker within each order's item list.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #23 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#23</span>
+          <span class="issue-title">Activity logging has no retry on failure</span>
+          <span class="badge badge-low">Low</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text"><code>logActivity()</code> fired an API call with no retry logic. If the backend was temporarily unavailable, analytics events were permanently and silently lost.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added <code>storePendingActivity()</code> and <code>flushPendingActivities()</code> helpers. On failure, events are persisted in <code>localStorage</code> under the key <code>tuangou.pendingActivities</code> (capped at 10 entries; oldest events are discarded when the cap is exceeded). On each subsequent <code>logActivity()</code> call, any pending events are flushed first before the new event is sent.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #25 / #26 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#25 / #26</span>
+          <span class="issue-title">Minor order route cleanup</span>
+          <span class="badge badge-low">Low</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">Issue #25</span>
+            <span class="issue-text">Added a dedicated <code>fetchError</code> state variable to the orders page, wired to the re-thrown error from <code>listOrders()</code> (connected to the #9 fix above).</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Issue #26</span>
+            <span class="issue-text">Removed the redundant capitalised <code>Idempotency-Key</code> header lookup from the order route. Next.js normalises all incoming headers to lowercase, so only the lowercase <code>idempotency-key</code> lookup is needed.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ── 3.4 fix/ui-ux ─────────────────────────────────────────────────── -->
+    <div class="branch-block" id="branch-ui">
+      <div class="branch-header">
+        <h3>3.4 &nbsp; Branch: <code>fix/ui-ux</code> &nbsp;—&nbsp; 6 issues fixed</h3>
+        <div class="branch-files">
+          <strong>Files modified:</strong>
+          <code>src/app/(storefront)/product/[slug]/page.tsx</code>,
+          <code>src/app/(storefront)/account/page.tsx</code>,
+          <code>src/components/common/Navbar.tsx</code>,
+          <code>src/lib/utils.ts</code>,
+          <code>src/i18n/strings.ts</code>,
+          <code>src/i18n/LanguageProvider.tsx</code>,
+          <code>src/app/admin/page.tsx</code>
+          <br/>
+          <strong>Files audited (no change needed):</strong>
+          <code>src/components/storefront/ProductCard.tsx</code>
+        </div>
+      </div>
+
+      <!-- Issue #7 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#7</span>
+          <span class="issue-title">Product page infinite loading on unknown slug</span>
+          <span class="badge badge-high">High</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">If a product slug didn't match any existing product — for example, a deleted product or a mistyped URL — the page would display a loading spinner indefinitely with no 404 response or redirect to a meaningful page.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">Users landing on a bad product URL would be stuck with no way to navigate back except using the browser's back button, creating a poor and confusing experience.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added a <code>productsLoaded</code> state flag. Once products have finished loading and the slug still doesn't match any product, a centered "Product not found" card is rendered with a navigation link back to <code>/shop</code>. New i18n keys <code>product.notFound</code> and <code>product.notFoundBody</code> were added to <code>strings.ts</code> in both English and Chinese.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #8 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#8</span>
+          <span class="issue-title">No avatar image fallback on account page</span>
+          <span class="badge badge-high">High</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The user avatar <code>&lt;img&gt;</code> element on the account page had no <code>onError</code> handler. Expired or broken avatar URLs — common with OAuth providers where tokens have lifetimes — would display a broken image icon.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added an <code>avatarError</code> React state and an <code>onError</code> handler on the image element. On load failure, the component renders a fallback initials <code>div</code> styled with <code>bg-[#D94F2B] text-white</code> — consistent with the existing avatar fallback in the Navbar component.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #13 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#13</span>
+          <span class="issue-title">HTML <code>lang</code> attribute never set on first load</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text"><code>document.documentElement.lang</code> was only updated when the user actively changed the locale setting, never on initial page mount. Every first page load had no <code>lang</code> attribute on the <code>&lt;html&gt;</code> element.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">Search engines and screen readers rely on the <code>lang</code> attribute to identify the page language. This was an SEO and accessibility gap affecting every single page load for all users.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">The <code>LanguageProvider</code> initialization effect now sets <code>document.documentElement.lang</code> immediately on mount (to <code>"zh-CN"</code> or <code>"en"</code> as appropriate) in addition to updating it on subsequent locale changes.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #17 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#17</span>
+          <span class="issue-title">Product gallery shows the same image 4 times</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The product detail page had a 4-slot thumbnail strip that rendered the same <code>product.imageUrl</code> in all 4 thumbnail positions. This was unfinished placeholder code for a multi-image feature that was never completed.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">Why it mattered</span>
+            <span class="issue-text">Users would see 4 identical thumbnails and try clicking them expecting different views, damaging product page credibility and raising questions about the platform's quality.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">The thumbnail strip was removed entirely. The page now renders a single clean main product image without the incomplete multi-image gallery UI.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #18 / #29 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#18 / #29</span>
+          <span class="issue-title"><code>formatPrice</code> always outputs USD regardless of locale</span>
+          <span class="badge badge-medium">Medium</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The <code>formatPrice(cents, locale?)</code> utility in <code>utils.ts</code> accepted a <code>locale</code> parameter but always returned a USD-formatted string (<code>$XX.XX</code>) regardless of what was passed. For a Chinese-market platform, displaying USD prices is functionally incorrect.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Implemented proper locale-aware formatting using <code>Intl.NumberFormat</code>: when <code>locale</code> is <code>'zh'</code> or <code>'zh-CN'</code>, the function outputs CNY format (<code>¥XX.XX</code>); all other locales continue to receive USD format (<code>$XX.XX</code>). The change is fully backward-compatible — callers that don't pass a locale continue to receive USD output.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #22 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#22</span>
+          <span class="issue-title">Navbar avatar initial doesn't match account page logic</span>
+          <span class="badge badge-low">Low</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">The Navbar derived the avatar initial using <code>user.name.charAt(0)</code>, while the account page used a different derivation that fell back through multiple user object fields. This caused inconsistent display of the user's initial depending on which part of the UI was rendering it.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Extracted a shared <code>getDisplayName(user): string</code> utility function into <code>utils.ts</code> with a canonical fallback chain: <code>fullName → name → email prefix → "User"</code>. Both the Navbar and the account page now call this shared function, ensuring the displayed name and initial are always consistent.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Issue #30 -->
+      <div class="issue-card">
+        <div class="issue-card-header">
+          <span class="issue-number">#30</span>
+          <span class="issue-title">No loading/error state on admin stats dashboard</span>
+          <span class="badge badge-low">Low</span>
+        </div>
+        <div class="issue-card-body">
+          <div class="issue-row">
+            <span class="issue-label">What was wrong</span>
+            <span class="issue-text">While admin dashboard statistics were loading, all stat cards displayed blank or zero values with no loading indicator. If the stats fetch failed, nothing in the UI indicated an error had occurred.</span>
+          </div>
+          <div class="issue-row">
+            <span class="issue-label">How it was fixed</span>
+            <span class="issue-text">Added skeleton loading cards using <code>animate-pulse bg-gray-200</code> that display while stats are <code>null</code>. A <code>bg-red-50 text-red-700 border border-red-200</code> error banner is rendered above the skeleton cards if the fetch fails, providing clear feedback to administrators.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 4 — FILES CHANGED SUMMARY TABLE
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="report-section" id="section-4">
+    <div class="section-header">
+      <span class="section-number">Section 4</span>
+      <h2>Files Changed Summary</h2>
+    </div>
+
+    <p>The following table lists every source file that was modified as part of this audit, the branch it was changed on, and the issue numbers addressed in that file.</p>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>File</th>
+            <th>Branch</th>
+            <th>Issues Fixed</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>src/providers/AuthProvider.tsx</code></td>
+            <td><code>fix/auth-profile</code></td>
+            <td>#6, #24</td>
+          </tr>
+          <tr>
+            <td><code>src/app/api/_lib/auth.ts</code></td>
+            <td><code>fix/auth-profile</code></td>
+            <td>#12</td>
+          </tr>
+          <tr>
+            <td><code>src/providers/CartProvider.tsx</code></td>
+            <td><code>fix/cart-checkout</code></td>
+            <td>#1</td>
+          </tr>
+          <tr>
+            <td><code>src/app/(storefront)/cart/page.tsx</code></td>
+            <td><code>fix/cart-checkout</code></td>
+            <td>#14, #21</td>
+          </tr>
+          <tr>
+            <td><code>src/app/(storefront)/checkout/page.tsx</code></td>
+            <td><code>fix/cart-checkout</code></td>
+            <td>#2, #11, #20, #21</td>
+          </tr>
+          <tr>
+            <td><code>src/app/api/_lib/cart-helpers.ts</code></td>
+            <td><code>fix/cart-checkout</code></td>
+            <td>#5, #10</td>
+          </tr>
+          <tr>
+            <td><code>src/app/api/v1/cart/merge/route.ts</code></td>
+            <td><code>fix/cart-checkout</code></td>
+            <td>#10</td>
+          </tr>
+          <tr>
+            <td><code>src/i18n/strings.ts</code></td>
+            <td><code>fix/cart-checkout</code>, <code>fix/ui-ux</code></td>
+            <td>#20, #21 (cart-checkout); #7 (ui-ux)</td>
+          </tr>
+          <tr>
+            <td><code>src/app/api/v1/orders/route.ts</code></td>
+            <td><code>fix/order-api</code></td>
+            <td>#3, #4, #26</td>
+          </tr>
+          <tr>
+            <td><code>src/components/storefront/OrderDetailCard.tsx</code></td>
+            <td><code>fix/order-api</code></td>
+            <td>#19</td>
+          </tr>
+          <tr>
+            <td><code>src/app/(storefront)/account/orders/page.tsx</code></td>
+            <td><code>fix/order-api</code></td>
+            <td>#9, #25</td>
+          </tr>
+          <tr>
+            <td><code>src/lib/repository.ts</code></td>
+            <td><code>fix/order-api</code></td>
+            <td>#9, #23</td>
+          </tr>
+          <tr>
+            <td><code>src/app/(storefront)/product/[slug]/page.tsx</code></td>
+            <td><code>fix/ui-ux</code></td>
+            <td>#7, #17</td>
+          </tr>
+          <tr>
+            <td><code>src/app/(storefront)/account/page.tsx</code></td>
+            <td><code>fix/ui-ux</code></td>
+            <td>#8, #22</td>
+          </tr>
+          <tr>
+            <td><code>src/components/common/Navbar.tsx</code></td>
+            <td><code>fix/ui-ux</code></td>
+            <td>#22</td>
+          </tr>
+          <tr>
+            <td><code>src/lib/utils.ts</code></td>
+            <td><code>fix/ui-ux</code></td>
+            <td>#18, #22, #29</td>
+          </tr>
+          <tr>
+            <td><code>src/i18n/LanguageProvider.tsx</code></td>
+            <td><code>fix/ui-ux</code></td>
+            <td>#13</td>
+          </tr>
+          <tr>
+            <td><code>src/app/admin/page.tsx</code></td>
+            <td><code>fix/ui-ux</code></td>
+            <td>#30</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <p style="margin-top: 1rem;">In total, <strong>18 source files</strong> were modified across <strong>4 branches</strong>, addressing <strong>30 issues</strong>.</p>
+  </div>
+
+
+  <!-- ═══════════════════════════════════════════════════════════════════════
+       SECTION 5 — OUTSTANDING NOTES
+  ══════════════════════════════════════════════════════════════════════════ -->
+  <div class="report-section" id="section-5">
+    <div class="section-header">
+      <span class="section-number">Section 5</span>
+      <h2>Outstanding Notes</h2>
+    </div>
+
+    <div class="callout callout-info">
+      <strong>Files Audited With No Changes Required</strong>
+      The following files were fully audited during this review but were found to already be correct and required no modification. They are listed here for completeness and to confirm they were not overlooked.
+    </div>
+
+    <ul>
+      <li><code>src/app/api/v1/me/route.ts</code> — Audited in full. Logic was already correct. No change made.</li>
+      <li><code>src/components/storefront/ProductCard.tsx</code> — Audited in full. Already had correct <code>alt</code> text on all product images. No change made.</li>
+    </ul>
+
+    <h4>WeChat OAuth Feature Branch</h4>
+    <p>The WeChat OAuth implementation (located on branch <code>wechat-oauth</code>) was intentionally excluded from this report. It is a separate feature branch that has not yet been approved for merge into <code>development</code> and falls outside the scope of this audit cycle.</p>
+
+    <h4>Follow-Up Work Recommended</h4>
+
+    <div class="callout">
+      <strong>formatPrice Locale Propagation — Follow-Up Required</strong>
+      Issue #18/#29 made <code>formatPrice</code> locale-aware, but the fix is backward-compatible: callers throughout the storefront that do not yet pass a locale argument will continue to receive USD-formatted output. A follow-up pass is recommended to update all <code>formatPrice</code> call sites to pass the active locale (available from the <code>LanguageProvider</code> context), ensuring that Chinese-locale users see CNY-formatted prices consistently across the platform.
+    </div>
+  </div>
+
+
+  <!-- ─── Footer ─────────────────────────────────────────────────────────── -->
+  <div class="report-footer">
+    <p>Tuangou (微团购) &nbsp;|&nbsp; Code Audit &amp; Bug Fix Report &nbsp;|&nbsp; 29 May 2026 &nbsp;|&nbsp; Tuangou Dev, reh13597</p>
+    <p style="margin-top: 0.25rem;">Internal Engineering Documentation — Confidential</p>
+  </div>
+
+</div><!-- /page-wrap -->
+</body>
+</html>

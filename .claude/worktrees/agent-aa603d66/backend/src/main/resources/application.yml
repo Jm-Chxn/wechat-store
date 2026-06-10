@@ -1,0 +1,89 @@
+spring:
+  application:
+    name: tuangou-backend
+  datasource:
+    url: ${SUPABASE_DB_URL:jdbc:postgresql://localhost:5432/tuangou}
+    username: ${SUPABASE_DB_USER:postgres}
+    password: ${SUPABASE_DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 8
+      connection-timeout: 10000
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    schemas: public
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: ${SUPABASE_JWKS_URL:https://szkbtkkqrzkkxedybths.supabase.co/auth/v1/.well-known/jwks.json}
+
+server:
+  port: ${SERVER_PORT:8080}
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: when-authorized
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:3000
+      - http://localhost:3001
+  jwt:
+    role-claim: role
+  supabase:
+    secret-key: ${SUPABASE_SECRET_KEY:}
+    jwks-url: ${SUPABASE_JWKS_URL:}
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    com.tuangou: INFO
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:tuangou;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;CASE_INSENSITIVE_IDENTIFIERS=TRUE
+    username: sa
+    password: ""
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          jwk-set-uri: http://localhost:0/.well-known/jwks.json

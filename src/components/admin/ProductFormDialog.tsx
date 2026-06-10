@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { ImageUploadField } from "@/components/admin/ImageUploadField";
 import {
   Select,
   SelectContent,
@@ -40,8 +41,7 @@ const blankProduct = (): Product => ({
   stockCount: 10,
   isNew: true,
   dietaryTags: [],
-  imageUrl:
-    "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=600&h=600&fit=crop&auto=format&q=70",
+  imageUrl: "",
   categorySlug: "pantry-sauces",
 });
 
@@ -91,29 +91,20 @@ export function ProductFormDialog({
           <DialogDescription>{t("brand.tagline")}</DialogDescription>
         </DialogHeader>
         <form onSubmit={onSubmit} className="grid gap-4">
+          <p className="text-xs text-muted-foreground">
+            {t("admin.requiredNote")}
+          </p>
           <div className="space-y-1.5">
             <Label>{t("admin.productImageUrl")}</Label>
-            <Input
+            <ImageUploadField
               value={draft.imageUrl}
-              onChange={(e) => set("imageUrl", e.target.value)}
-              placeholder="https://images.unsplash.com/…"
+              onChange={(url) => set("imageUrl", url)}
             />
-            {draft.imageUrl && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={draft.imageUrl}
-                alt="preview"
-                className="mt-2 h-24 w-24 rounded-xl object-cover img-fallback"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).style.opacity = "0.4";
-                }}
-              />
-            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label>{t("admin.productNameEn")}</Label>
+              <Label>{t("admin.productNameEn")} <span className="text-primary">*</span></Label>
               <Input
                 required
                 value={draft.nameEn}
@@ -121,7 +112,7 @@ export function ProductFormDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("admin.productNameZh")}</Label>
+              <Label>{t("admin.productNameZh")} <span className="text-primary">*</span></Label>
               <Input
                 required
                 value={draft.nameZh}
@@ -145,7 +136,7 @@ export function ProductFormDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label>{t("admin.productPrice")}</Label>
+              <Label>{t("admin.productPrice")} <span className="text-primary">*</span></Label>
               <Input
                 required
                 type="number"

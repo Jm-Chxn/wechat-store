@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
   ShoppingCart,
@@ -10,6 +10,7 @@ import {
   User as UserIcon,
   X,
   ShieldCheck,
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,13 +28,27 @@ const navItems: { href: string; key: "nav.home" | "nav.shop" | "nav.categories" 
 
 export function Navbar() {
   const { t } = useLanguage();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const { count } = useCart();
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
+  const [userMenuOpen, setUserMenuOpen] = React.useState(false);
+  const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   React.useEffect(() => {
     setMobileOpen(false);
+    setUserMenuOpen(false);
   }, [pathname]);
 
   return (
@@ -64,6 +79,8 @@ export function Navbar() {
           {isAdmin && (
             <Link
               href="/admin"
+              target="_blank"
+              rel="noopener noreferrer"
               className={cn(
                 "ml-1 inline-flex items-center gap-1 rounded-xl px-3 py-2 text-sm font-medium",
                 pathname.startsWith("/admin")
@@ -96,24 +113,52 @@ export function Navbar() {
           </Link>
 
           {user ? (
-            <Link
-              href="/account"
-              className="hidden items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm hover:bg-secondary sm:inline-flex"
-            >
-              {user.avatarUrl ? (
-                /* eslint-disable-next-line @next/next/no-img-element */
-                <img
-                  src={user.avatarUrl}
-                  alt={getDisplayName(user)}
-                  className="h-7 w-7 rounded-full bg-secondary object-cover"
-                />
-              ) : (
-                <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
-                  {getDisplayName(user).charAt(0).toUpperCase()}
-                </span>
+            <div ref={userMenuRef} className="relative hidden sm:block">
+              <button
+                type="button"
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className="inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm hover:bg-secondary"
+              >
+                {user.avatarUrl ? (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
+                    src={user.avatarUrl}
+                    alt={getDisplayName(user)}
+                    className="h-7 w-7 rounded-full bg-secondary object-cover"
+                  />
+                ) : (
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
+                    {getDisplayName(user).charAt(0).toUpperCase()}
+                  </span>
+                )}
+                <span>{getDisplayName(user)}</span>
+              </button>
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl border border-border bg-surface py-1 shadow-lg">
+                  <Link
+                    href="/account"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-secondary"
+                  >
+                    <UserIcon className="h-4 w-4 text-muted-foreground" />
+                    {t("nav.myAccount")}
+                  </Link>
+                  <div className="my-1 border-t border-border" />
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      setUserMenuOpen(false);
+                      await signOut();
+                      router.push("/");
+                    }}
+                    className="flex w-full items-center gap-2 px-3 py-2 text-sm text-destructive hover:bg-secondary"
+                  >
+                    <LogOut className="h-4 w-4" />
+                    {t("nav.signOut")}
+                  </button>
+                </div>
               )}
-              <span>{getDisplayName(user)}</span>
-            </Link>
+            </div>
           ) : (
             <Button asChild size="sm" className="hidden sm:inline-flex">
               <Link href="/account/login">
@@ -149,6 +194,8 @@ export function Navbar() {
             {isAdmin && (
               <Link
                 href="/admin"
+                target="_blank"
+                rel="noopener noreferrer"
                 className="rounded-xl px-3 py-2 text-sm text-primary hover:bg-primary/10"
               >
                 {t("nav.admin")}

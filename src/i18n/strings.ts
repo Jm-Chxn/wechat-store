@@ -16,6 +16,7 @@ export const dictionary = {
   "nav.categories": { en: "Categories", zh: "分类" },
   "nav.cart": { en: "Cart", zh: "购物车" },
   "nav.account": { en: "Orders", zh: "订单" },
+  "nav.myAccount": { en: "Account", zh: "账户" },
   "nav.signIn": { en: "Sign In", zh: "登录" },
   "nav.signOut": { en: "Sign Out", zh: "退出登录" },
   "nav.admin": { en: "Admin", zh: "管理后台" },
@@ -336,6 +337,9 @@ export const dictionary = {
   "admin.ordersSearchPlaceholder": { en: "Search by ID, name, phone…", zh: "搜索订单号、姓名、电话…" },
   "admin.ordersFilterAllStatuses": { en: "All statuses", zh: "全部状态" },
   "admin.ordersLoadError": { en: "Failed to load orders", zh: "订单加载失败" },
+  "admin.confirmDeleteOrder": { en: "Delete this order?", zh: "确认删除此订单？" },
+  "admin.confirmDeleteOrderBody": { en: "This will permanently remove the order and all its items.", zh: "订单及所有明细将被永久删除。" },
+  "admin.orderDeleted": { en: "Order deleted", zh: "订单已删除" },
   "admin.orderColOrder": { en: "Order", zh: "订单号" },
   "admin.orderColCustomer": { en: "Customer", zh: "客户" },
   "admin.orderColPhone": { en: "Phone", zh: "电话" },
@@ -354,6 +358,17 @@ export const dictionary = {
   "admin.subtotal": { en: "Subtotal", zh: "小计" },
   "admin.deliveryFee": { en: "Delivery", zh: "运费" },
   "admin.totalLabel": { en: "Total", zh: "合计" },
+
+  // products page
+  "admin.productsPageTitle": { en: "All products", zh: "全部商品" },
+  "admin.productsCount": { en: "{n} of {total} products", zh: "{n} / {total} 件商品" },
+  "admin.productsSearchPlaceholder": { en: "Search by name…", zh: "搜索商品名称…" },
+  "admin.productsFilterAll": { en: "All categories", zh: "全部分类" },
+  "admin.noProductsMatch": { en: "No products match.", zh: "没有符合的商品。" },
+  "admin.requiredNote": { en: "Fields marked with * are required", zh: "标有 * 的字段为必填项" },
+
+  // activity page
+  "admin.activityCount": { en: "{n} events", zh: "{n} 条事件" },
 
   // customers (users) page
   "admin.customersSection": { en: "Customers", zh: "客户" },

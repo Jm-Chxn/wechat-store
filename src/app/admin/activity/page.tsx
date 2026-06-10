@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useLanguage } from "@/i18n/LanguageProvider";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { listActivities, listUsers } from "@/lib/repository";
 import { formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
@@ -39,13 +40,12 @@ export default function AdminActivityPage() {
       : activities.filter((a) => a.type === active);
 
   return (
-    <div className="space-y-4 p-4 md:p-6">
-      <div>
-        <h1 className="text-2xl font-semibold">{t("admin.activityFeed")}</h1>
-        <p className="text-sm text-muted-foreground">
-          {t("shop.resultsCount", { n: filtered.length })}
-        </p>
-      </div>
+    <div className="space-y-5">
+      <AdminPageHeader
+        section={t("admin.activity")}
+        title={t("admin.activityFeed")}
+        subtitle={t("admin.activityCount", { n: filtered.length })}
+      />
       <div className="flex flex-wrap gap-2">
         {filters.map((f) => (
           <button
@@ -76,7 +76,7 @@ export default function AdminActivityPage() {
               key={a.id}
               className="flex items-start gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
             >
-              {u ? (
+              {u?.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={u.avatarUrl}
