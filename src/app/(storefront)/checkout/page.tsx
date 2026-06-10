@@ -363,7 +363,6 @@ export default function CheckoutPage() {
                     )}
                   </SelectContent>
                 </Select>
-                <p className="pt-5 text-xs text-muted-foreground">{t("checkout.deliveryNote")}</p>
                 <p
                   className="rounded-lg px-3 py-2 text-xs"
                   style={{ background: "#EEF4FF", color: "#2C4A8C" }}
@@ -483,7 +482,7 @@ export default function CheckoutPage() {
 
         <aside
           className={cn(
-            "col-span-2 h-fit space-y-4 rounded-2xl border border-border bg-surface p-5 lg:col-span-1 lg:col-start-3 lg:row-start-1 lg:row-span-4",
+            "col-span-2 h-fit space-y-4 rounded-2xl border border-border bg-surface p-5 lg:col-span-1 lg:col-start-3 lg:row-start-2 lg:row-span-4",
             qualifiesForDelivery
               ? user
                 ? "row-start-4"

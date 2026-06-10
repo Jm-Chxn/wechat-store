@@ -40,7 +40,7 @@ export function Hero() {
         <div className="relative">
           <div className="relative ml-auto aspect-[4/5] w-full max-w-md overflow-hidden rounded-[2.5rem] border-4 border-surface shadow-lift">
             <Image
-              src="https://images.unsplash.com/photo-1604908554049-0192fd92e4b5?w=900&h=1100&fit=crop&auto=format&q=70"
+              src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=900&h=1100&fit=crop&auto=format&q=70"
               alt="Community shared meals"
               fill
               className="object-cover img-fallback"

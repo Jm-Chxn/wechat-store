@@ -28,13 +28,22 @@ const navItems: { href: string; key: "nav.home" | "nav.shop" | "nav.categories" 
 
 export function Navbar() {
   const { t } = useLanguage();
-  const { user, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut, isTransitioning } = useAuth();
   const { count } = useCart();
   const pathname = usePathname();
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [userMenuOpen, setUserMenuOpen] = React.useState(false);
   const userMenuRef = React.useRef<HTMLDivElement>(null);
+
+  // Freeze the displayed user during auth transitions so the navbar pill and
+  // the page content update together once navigation settles.
+  const frozenUserRef = React.useRef(user);
+  if (!isTransitioning) {
+    frozenUserRef.current = user;
+  }
+  const displayedUser = isTransitioning ? frozenUserRef.current : user;
+  const displayedIsAdmin = displayedUser?.role === "admin";
 
   React.useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -76,7 +85,7 @@ export function Navbar() {
               {t(item.key)}
             </Link>
           ))}
-          {isAdmin && (
+          {displayedIsAdmin && (
             <Link
               href="/admin"
               target="_blank"
@@ -112,26 +121,26 @@ export function Navbar() {
             )}
           </Link>
 
-          {user ? (
+          {displayedUser ? (
             <div ref={userMenuRef} className="relative hidden sm:block">
               <button
                 type="button"
                 onClick={() => setUserMenuOpen((v) => !v)}
                 className="inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm hover:bg-secondary"
               >
-                {user.avatarUrl ? (
+                {displayedUser.avatarUrl ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
-                    src={user.avatarUrl}
-                    alt={getDisplayName(user)}
+                    src={displayedUser.avatarUrl}
+                    alt={getDisplayName(displayedUser)}
                     className="h-7 w-7 rounded-full bg-secondary object-cover"
                   />
                 ) : (
                   <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
-                    {getDisplayName(user).charAt(0).toUpperCase()}
+                    {getDisplayName(displayedUser).charAt(0).toUpperCase()}
                   </span>
                 )}
-                <span>{getDisplayName(user)}</span>
+                <span>{getDisplayName(displayedUser)}</span>
               </button>
               {userMenuOpen && (
                 <div className="absolute right-0 top-full mt-1.5 w-44 rounded-xl border border-border bg-surface py-1 shadow-lg">
@@ -191,7 +200,7 @@ export function Navbar() {
                 {t(item.key)}
               </Link>
             ))}
-            {isAdmin && (
+            {displayedIsAdmin && (
               <Link
                 href="/admin"
                 target="_blank"
@@ -203,24 +212,24 @@ export function Navbar() {
             )}
             <div className="flex items-center gap-2 px-1 pt-2">
               <LanguageToggle />
-              {user ? (
+              {displayedUser ? (
                 <Link
                   href="/account"
                   className="ml-auto inline-flex items-center gap-2 rounded-full border border-border bg-surface py-1 pl-1 pr-3 text-sm"
                 >
-                  {user.avatarUrl ? (
+                  {displayedUser.avatarUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
                     <img
-                      src={user.avatarUrl}
-                      alt={getDisplayName(user)}
+                      src={displayedUser.avatarUrl}
+                      alt={getDisplayName(displayedUser)}
                       className="h-7 w-7 rounded-full bg-secondary object-cover"
                     />
                   ) : (
                     <span className="grid h-7 w-7 place-items-center rounded-full bg-secondary text-xs font-medium">
-                      {getDisplayName(user).charAt(0).toUpperCase()}
+                      {getDisplayName(displayedUser).charAt(0).toUpperCase()}
                     </span>
                   )}
-                  <span>{getDisplayName(user)}</span>
+                  <span>{getDisplayName(displayedUser)}</span>
                 </Link>
               ) : (
                 <Button asChild size="sm" className="ml-auto">

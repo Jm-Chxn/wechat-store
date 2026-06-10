@@ -43,6 +43,7 @@ export interface AuthContextValue {
   user: AuthUser | null;
   session: Session | null;
   isReady: boolean;
+  isTransitioning: boolean;
   profileError: string | null;
   role: Role | null;
   isAdmin: boolean;
@@ -85,6 +86,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = React.useState<Session | null>(null);
   const [user, setUser] = React.useState<AuthUser | null>(null);
   const [isReady, setReady] = React.useState(false);
+  const [isTransitioning, setTransitioning] = React.useState(false);
   const [profileError, setProfileError] = React.useState<string | null>(null);
 
   const refreshProfile = React.useCallback(async (sess: Session | null) => {
@@ -138,7 +140,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => {
         if (isMounted) setReady(true);
       });
-    const { data: sub } = getSupabase().auth.onAuthStateChange(async (_event, sess) => {
+    const { data: sub } = getSupabase().auth.onAuthStateChange(async (event, sess) => {
+      // Mark as transitioning for real auth changes (not the initial session load)
+      // so UI components can freeze their display until navigation settles.
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        setTransitioning(true);
+      }
       setSession(sess);
       try {
         await refreshProfile(sess);
@@ -146,6 +153,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(null);
       } finally {
         setReady(true);
+        // For SIGNED_IN, clear the transition flag after a short delay to allow
+        // the login page's redirect (router.replace) to initiate before the
+        // navbar updates. For SIGNED_OUT, signOut() manages clearing via its own
+        // setTimeout after router.refresh().
+        if (event === "SIGNED_IN") {
+          setTimeout(() => setTransitioning(false), 300);
+        }
       }
     });
     return () => {
@@ -279,6 +293,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Ignore sign-out failures so UI can still clear client state via auth listener.
     } finally {
       router.refresh();
+      // isTransitioning was set true by onAuthStateChange (SIGNED_OUT event).
+      // Clear it after a tick so the new page render has already started.
+      // The Navbar will stop freezing its state once the route change settles.
+      setTimeout(() => setTransitioning(false), 300);
     }
   }, [router]);
 
@@ -287,6 +305,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       isReady,
+      isTransitioning,
       profileError,
       role: user?.role ?? null,
       isAdmin: user?.role === "admin",
@@ -301,6 +320,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       user,
       session,
       isReady,
+      isTransitioning,
       profileError,
       signInWithPassword,
       signUpWithPassword,
