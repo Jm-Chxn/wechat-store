@@ -31,6 +31,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
   const [serverIds, setServerIds] = React.useState<Map<string, string>>(new Map());
   const [isReady, setReady] = React.useState(false);
   const [synced, setSynced] = React.useState<string | null>(null);
+  const syncingRef = React.useRef(false);
 
   // Hydrate from localStorage initially.
   React.useEffect(() => {
@@ -56,28 +57,33 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     }
     if (synced === user.id) return;
     let cancelled = false;
+    syncingRef.current = true;
     void (async () => {
-      if (!BACKEND_ENABLED) {
-        if (!cancelled) setSynced(user.id);
-        return;
-      }
-      const guest = readJSON<CartLine[]>(StorageKeys.cart, []);
-      const merged =
-        guest.length > 0
-          ? await mergeGuestCart(guest.map((l) => ({ productId: l.productId, quantity: l.quantity })))
-          : await fetchServerCart();
-      if (cancelled) return;
-      if (!merged) {
+      try {
+        if (!BACKEND_ENABLED) {
+          if (!cancelled) setSynced(user.id);
+          return;
+        }
+        const guest = readJSON<CartLine[]>(StorageKeys.cart, []);
+        const merged =
+          guest.length > 0
+            ? await mergeGuestCart(guest.map((l) => ({ productId: l.productId, quantity: l.quantity })))
+            : await fetchServerCart();
+        if (cancelled) return;
+        if (!merged) {
+          setSynced(user.id);
+          return;
+        }
+        const items = (merged.items ?? []) as ServerCartItem[];
+        setLines(items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
+        const ids = new Map<string, string>();
+        items.forEach((i) => ids.set(i.productId, i.id));
+        setServerIds(ids);
+        writeJSON(StorageKeys.cart, items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
         setSynced(user.id);
-        return;
+      } finally {
+        syncingRef.current = false;
       }
-      const items = (merged.items ?? []) as ServerCartItem[];
-      setLines(items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
-      const ids = new Map<string, string>();
-      items.forEach((i) => ids.set(i.productId, i.id));
-      setServerIds(ids);
-      writeJSON(StorageKeys.cart, items.map((i) => ({ productId: i.productId, quantity: i.quantity })));
-      setSynced(user.id);
     })();
     return () => { cancelled = true; };
   }, [authReady, user, synced]);
@@ -97,7 +103,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         : [...lines, { productId, quantity: qty }];
       persistLocal(next);
       logActivity("ADD_TO_CART", user?.id ?? null, { productId, qty });
-      if (user && BACKEND_ENABLED) {
+      if (user && BACKEND_ENABLED && !syncingRef.current) {
         void api
           .post<{ items: ServerCartItem[] }>("/api/v1/cart/items", { productId, quantity: qty })
           .then((cart) => {
@@ -105,7 +111,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             (cart.items ?? []).forEach((i) => ids.set(i.productId, i.id));
             setServerIds(ids);
           })
-          .catch(() => {});
+          .catch((err) => console.error("[CartProvider] sync failed:", err));
       }
     },
     [lines, persistLocal, user],
@@ -115,8 +121,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     (productId: string) => {
       persistLocal(lines.filter((l) => l.productId !== productId));
       const id = serverIds.get(productId);
-      if (user && id && BACKEND_ENABLED) {
-        void api.delete(`/api/v1/cart/items/${encodeURIComponent(id)}`).catch(() => {});
+      if (user && id && BACKEND_ENABLED && !syncingRef.current) {
+        void api.delete(`/api/v1/cart/items/${encodeURIComponent(id)}`).catch((err) => console.error("[CartProvider] sync failed:", err));
       }
     },
     [lines, persistLocal, serverIds, user],
@@ -129,8 +135,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         // (which would create a circular / stale-closure dependency).
         persistLocal(lines.filter((l) => l.productId !== productId));
         const removeId = serverIds.get(productId);
-        if (user && removeId && BACKEND_ENABLED) {
-          void api.delete(`/api/v1/cart/items/${encodeURIComponent(removeId)}`).catch(() => {});
+        if (user && removeId && BACKEND_ENABLED && !syncingRef.current) {
+          void api.delete(`/api/v1/cart/items/${encodeURIComponent(removeId)}`).catch((err) => console.error("[CartProvider] sync failed:", err));
         }
         return;
       }
@@ -138,8 +144,8 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         lines.map((l) => (l.productId === productId ? { ...l, quantity: qty } : l)),
       );
       const id = serverIds.get(productId);
-      if (user && id && BACKEND_ENABLED) {
-        void api.patch(`/api/v1/cart/items/${encodeURIComponent(id)}`, { quantity: qty }).catch(() => {});
+      if (user && id && BACKEND_ENABLED && !syncingRef.current) {
+        void api.patch(`/api/v1/cart/items/${encodeURIComponent(id)}`, { quantity: qty }).catch((err) => console.error("[CartProvider] sync failed:", err));
       }
     },
     [lines, persistLocal, serverIds, user],

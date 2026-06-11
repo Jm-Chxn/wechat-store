@@ -1,0 +1,26 @@
+"use client";
+
+export default function StorefrontError({
+  error,
+  reset,
+}: {
+  error: Error & { digest?: string };
+  reset: () => void;
+}) {
+  return (
+    <div className="flex min-h-[60vh] flex-col items-center justify-center gap-4 px-4 text-center">
+      <h2 className="text-2xl font-semibold text-slate-800">
+        We couldn&apos;t load this page
+      </h2>
+      <p className="max-w-md text-slate-600">
+        Something went wrong while loading the page. Please try again.
+      </p>
+      <button
+        onClick={reset}
+        className="rounded-lg bg-primary px-6 py-2.5 text-sm font-medium text-white hover:bg-primary/90 transition-colors"
+      >
+        Try again
+      </button>
+    </div>
+  );
+}

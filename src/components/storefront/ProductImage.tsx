@@ -53,6 +53,7 @@ export function ProductImage({
       src={src}
       alt={alt}
       fill
+      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
       onError={() => setErrored(true)}
       className={cn(
         "object-cover img-fallback",

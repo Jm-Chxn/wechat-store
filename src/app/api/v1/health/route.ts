@@ -25,7 +25,7 @@ export const GET = withRoute("GET /api/v1/health", async () => {
     const latencyMs = Date.now() - t0;
     if (error) {
       console.error("[GET /api/v1/health] supabase ping failed:", error);
-      return apiError(500, `supabase reachable but query failed: ${error.message}`);
+      return apiError(500, "Internal server error");
     }
     return ok({
       status: "ok",
@@ -37,8 +37,7 @@ export const GET = withRoute("GET /api/v1/health", async () => {
       },
     });
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    console.error("[GET /api/v1/health] threw:", message);
-    return apiError(500, message);
+    console.error("[GET /api/v1/health] threw:", err);
+    return apiError(500, "Internal server error");
   }
 });

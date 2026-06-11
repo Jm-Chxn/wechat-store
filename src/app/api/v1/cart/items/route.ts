@@ -29,7 +29,7 @@ export const POST = withRoute("POST /api/v1/cart/items", async (request: NextReq
     .single();
   if (productError && productError.code !== "PGRST116") {
     console.error("[POST /api/v1/cart/items] product lookup failed:", productError);
-    return apiError(500, productError.message);
+    return apiError(500, "Internal server error");
   }
   if (!product) return apiError(404, "product not found");
 

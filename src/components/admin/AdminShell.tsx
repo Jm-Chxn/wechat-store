@@ -13,6 +13,7 @@ import {
   ExternalLink,
   Search,
 } from "lucide-react";
+import Image from "next/image";
 import { useAuth } from "@/providers/AuthProvider";
 import { LanguageToggle } from "@/components/common/LanguageToggle";
 import { useLanguage } from "@/i18n/LanguageProvider";
@@ -153,10 +154,11 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             {user && (
               <div className="flex items-center gap-2 rounded-full border border-slate-200 bg-white py-1 pl-1 pr-3 text-sm">
                 {user.avatarUrl ? (
-                  /* eslint-disable-next-line @next/next/no-img-element */
-                  <img
+                  <Image
                     src={user.avatarUrl}
                     alt={user.name}
+                    width={28}
+                    height={28}
                     className="h-7 w-7 rounded-full bg-slate-200 object-cover"
                   />
                 ) : (

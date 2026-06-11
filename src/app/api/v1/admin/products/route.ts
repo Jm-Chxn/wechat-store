@@ -46,7 +46,7 @@ export const POST = withRoute(
 
     if (error) {
       console.error("[POST admin/products] insert failed:", error);
-      return apiError(500, error.message);
+      return apiError(500, "Internal server error");
     }
     return ok(mapProduct(data as Record<string, unknown>), 201);
   },

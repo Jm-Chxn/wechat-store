@@ -76,7 +76,7 @@ export default function AdminActivityPage() {
               key={a.id}
               className="flex items-start gap-3 border-b border-border pb-3 last:border-0 last:pb-0"
             >
-              {u?.avatarUrl ? (
+              {u?.avatarUrl?.startsWith("https://") ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={u.avatarUrl}

@@ -25,7 +25,7 @@ export const POST = withRoute("POST /api/v1/events/track", async (request: NextR
 
   if (error) {
     console.error("[POST /api/v1/events/track] insert failed:", error);
-    return apiError(500, error.message);
+    return apiError(500, "Internal server error");
   }
   return ok(mapActivity(data as Record<string, unknown>));
 });

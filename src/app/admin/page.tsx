@@ -2,23 +2,15 @@
 
 import * as React from "react";
 import Link from "next/link";
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Line,
-  LineChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import dynamic from "next/dynamic";
 import { AdminStatCard, StatusPill } from "@/components/admin/AdminShell";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 import { adminApi, type AdminOrder, type AdminStatsPayload } from "@/lib/api/admin";
 import { categoryBySlug } from "@/data/categories";
 import { formatPrice } from "@/lib/utils";
 import { useLanguage } from "@/i18n/LanguageProvider";
+
+const AdminCharts = dynamic(() => import("@/components/admin/AdminCharts"), { ssr: false });
 
 export default function AdminDashboardPage() {
   const { t } = useLanguage();
@@ -104,69 +96,10 @@ export default function AdminDashboardPage() {
         />
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Panel title={t("admin.ordersLast7d")} subtitle={t("admin.dailyCount")}>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={stats.ordersLast7d}>
-                <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
-                <XAxis dataKey="date" stroke="#64748B" fontSize={11} />
-                <YAxis stroke="#64748B" fontSize={11} />
-                <Tooltip
-                  contentStyle={{
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-                <Line
-                  type="monotone"
-                  dataKey="orders"
-                  stroke="#0F172A"
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: "#0F172A" }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-
-        <Panel title={t("admin.revenueByCategory")} subtitle={t("admin.usd")}>
-          <div className="h-56">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={stats.revenueByCategory.map((r) => {
-                  const cat = categoryBySlug(r.categorySlug);
-                  return {
-                    name: cat?.nameEn ?? r.categorySlug,
-                    revenue: Math.round(r.revenue / 100),
-                  };
-                })}
-              >
-                <CartesianGrid stroke="#E2E8F0" strokeDasharray="3 3" />
-                <XAxis
-                  dataKey="name"
-                  stroke="#64748B"
-                  fontSize={10}
-                  interval={0}
-                  angle={-20}
-                  textAnchor="end"
-                  height={60}
-                />
-                <YAxis stroke="#64748B" fontSize={11} />
-                <Tooltip
-                  contentStyle={{
-                    border: "1px solid #E2E8F0",
-                    borderRadius: 8,
-                    fontSize: 12,
-                  }}
-                />
-                <Bar dataKey="revenue" fill="#475569" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
-      </div>
+      <AdminCharts
+        ordersLast7d={stats.ordersLast7d}
+        revenueByCategory={stats.revenueByCategory}
+      />
 
       <Panel
         title={t("admin.latestOrders")}

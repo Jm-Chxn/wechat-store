@@ -23,7 +23,7 @@ export const GET = withRoute(
 
     if (orderError && orderError.code !== "PGRST116") {
       console.error("[orders/[id] GET] lookup error:", orderError);
-      return apiError(500, orderError.message);
+      return apiError(500, "Internal server error");
     }
     if (!order) return apiError(404, "order not found");
 
@@ -72,7 +72,8 @@ export const PATCH = withRoute(
       .single();
 
     if (lookupError && lookupError.code !== "PGRST116") {
-      return apiError(500, lookupError.message);
+      console.error("[orders/[id] PATCH] lookup error:", lookupError);
+      return apiError(500, "Internal server error");
     }
     if (!existing) return apiError(404, "order not found");
 
@@ -99,7 +100,7 @@ export const PATCH = withRoute(
 
     if (updateError) {
       console.error("[orders/[id] PATCH] update failed:", updateError);
-      return apiError(500, updateError.message);
+      return apiError(500, "Internal server error");
     }
 
     const { data: items } = await supabase.from("order_items").select("*").eq("order_id", id);

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Image from "next/image";
 import { Search, Mail, Phone, ShoppingBag, X, Calendar } from "lucide-react";
 import { adminApi, type AdminUser, type AdminOrder } from "@/lib/api/admin";
 import { formatDate, formatPrice } from "@/lib/utils";
@@ -141,15 +142,24 @@ export default function AdminUsersPage() {
               <tr
                 key={u.userId}
                 onClick={() => setSelected(u)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    setSelected(u);
+                  }
+                }}
+                role="button"
+                tabIndex={0}
                 className="cursor-pointer hover:bg-slate-50"
               >
                 <td className="px-4 py-3">
                   <div className="flex items-center gap-2.5">
-                    {u.avatarUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
+                    {u.avatarUrl?.startsWith("https://") ? (
+                      <Image
                         src={u.avatarUrl}
                         alt={u.nickname ?? "user"}
+                        width={32}
+                        height={32}
                         className="h-8 w-8 rounded-full bg-slate-100 object-cover"
                       />
                     ) : (
@@ -247,11 +257,12 @@ function UserDrawer({
       >
         <header className="flex items-start justify-between border-b border-slate-200 px-5 py-4">
           <div className="flex items-center gap-3">
-            {user.avatarUrl ? (
-              /* eslint-disable-next-line @next/next/no-img-element */
-              <img
+            {user.avatarUrl?.startsWith("https://") ? (
+              <Image
                 src={user.avatarUrl}
                 alt={user.nickname ?? "user"}
+                width={40}
+                height={40}
                 className="h-10 w-10 rounded-full bg-slate-100 object-cover"
               />
             ) : (

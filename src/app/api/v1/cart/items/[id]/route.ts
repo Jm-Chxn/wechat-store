@@ -28,7 +28,7 @@ export const PATCH = withRoute(
       .single();
     if (lookupError && lookupError.code !== "PGRST116") {
       console.error("[cart/items/[id] PATCH] lookup error:", lookupError);
-      return apiError(500, lookupError.message);
+      return apiError(500, "Internal server error");
     }
 
     const cartRecord = item as
@@ -45,7 +45,7 @@ export const PATCH = withRoute(
         .eq("id", id);
       if (deleteError) {
         console.error("[cart/items/[id] PATCH] delete error:", deleteError);
-        return apiError(500, deleteError.message);
+        return apiError(500, "Internal server error");
       }
     } else {
       const { error: updateError } = await supabase
@@ -54,7 +54,7 @@ export const PATCH = withRoute(
         .eq("id", id);
       if (updateError) {
         console.error("[cart/items/[id] PATCH] update error:", updateError);
-        return apiError(500, updateError.message);
+        return apiError(500, "Internal server error");
       }
     }
 
@@ -78,7 +78,7 @@ export const DELETE = withRoute(
       .single();
     if (lookupError && lookupError.code !== "PGRST116") {
       console.error("[cart/items/[id] DELETE] lookup error:", lookupError);
-      return apiError(500, lookupError.message);
+      return apiError(500, "Internal server error");
     }
 
     const cartRecord = item as
@@ -94,7 +94,7 @@ export const DELETE = withRoute(
       .eq("id", id);
     if (deleteError) {
       console.error("[cart/items/[id] DELETE] delete error:", deleteError);
-      return apiError(500, deleteError.message);
+      return apiError(500, "Internal server error");
     }
 
     return ok(await fetchCartResponse(supabase, cartRecord.cart_id));

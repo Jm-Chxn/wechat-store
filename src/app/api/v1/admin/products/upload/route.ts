@@ -42,7 +42,7 @@ export const POST = withRoute(
 
     if (error) {
       console.error("[upload] storage upload failed:", error);
-      return apiError(500, error.message);
+      return apiError(500, "Internal server error");
     }
 
     const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(filename);

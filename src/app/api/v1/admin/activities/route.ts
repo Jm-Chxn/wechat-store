@@ -17,7 +17,7 @@ export const GET = withRoute("GET /api/v1/admin/activities", async (request: Nex
 
   if (error) {
     console.error("[GET admin/activities] select failed:", error);
-    return apiError(500, error.message);
+    return apiError(500, "Internal server error");
   }
   return ok((data ?? []).map((row) => mapActivity(row as Record<string, unknown>)));
 });
