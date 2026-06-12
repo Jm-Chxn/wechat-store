@@ -34,7 +34,7 @@ export const GET = withRoute("GET /api/v1/orders", async (request: NextRequest) 
 
   if (error) {
     console.error("[GET /api/v1/orders] orders select failed:", error);
-    return apiError(500, error.message);
+    return apiError(500, "Internal server error");
   }
 
   const result = (orders ?? []).map((order) => {
@@ -82,7 +82,7 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
 
   if (prodError) {
     console.error("[POST /api/v1/orders] products select failed:", prodError);
-    return apiError(500, `products lookup failed: ${prodError.message}`);
+    return apiError(500, "Internal server error");
   }
 
   const productMap = new Map((products ?? []).map((p) => [p.id, p]));
@@ -243,7 +243,7 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
       );
     }
     console.error("[POST /api/v1/orders] order insert failed:", orderError);
-    return apiError(500, `order insert failed: ${orderError.message}`);
+    return apiError(500, "Internal server error");
   }
 
   const { error: itemsError } = await supabase.from("order_items").insert(
@@ -263,27 +263,36 @@ export const POST = withRoute("POST /api/v1/orders", async (request: NextRequest
     // Roll back the orphan order so a retry can succeed and the admin table
     // doesn't fill with empty rows.
     await supabase.from("orders").delete().eq("id", order.id);
-    return apiError(500, `order items insert failed: ${itemsError.message}`);
+    return apiError(500, "Internal server error");
   }
 
   // Clear the user's cart (best-effort — we still return 201 even if this
   // step fails, since the order itself succeeded).
-  const { data: cart } = await supabase
-    .from("carts")
-    .select("id")
-    .eq("user_id", userId)
-    .single();
-  if (cart) {
-    const { error: clearError } = await supabase
-      .from("cart_items")
-      .delete()
-      .eq("cart_id", cart.id);
-    if (clearError) {
-      console.warn(
-        `[POST /api/v1/orders] failed to clear cart_items for cart ${cart.id}:`,
-        clearError,
+  try {
+    const { data: cart, error: cartLookupError } = await supabase
+      .from("carts")
+      .select("id")
+      .eq("user_id", userId)
+      .single();
+    if (cartLookupError) {
+      console.error(
+        `[POST /api/v1/orders] cart lookup failed for user ${userId}:`,
+        cartLookupError,
       );
+    } else if (cart) {
+      const { error: clearError } = await supabase
+        .from("cart_items")
+        .delete()
+        .eq("cart_id", cart.id);
+      if (clearError) {
+        console.error(
+          `[POST /api/v1/orders] failed to clear cart_items for cart ${cart.id}:`,
+          clearError,
+        );
+      }
     }
+  } catch (err) {
+    console.error("[POST /api/v1/orders] cart deletion threw:", err);
   }
 
   const { data: createdItems } = await supabase

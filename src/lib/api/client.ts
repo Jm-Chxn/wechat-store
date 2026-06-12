@@ -46,11 +46,29 @@ export async function apiFetch<T>(
   const controller = new AbortController();
   const timeoutMs = init.timeoutMs ?? 2500;
   const timeout = setTimeout(() => controller.abort(), timeoutMs);
-  const res = await fetch(`${BASE_URL}${path}`, { ...requestInit, signal: controller.signal }).finally(
-    () => {
-      clearTimeout(timeout);
-    },
-  );
+  let res: Response;
+  try {
+    res = await fetch(`${BASE_URL}${path}`, { ...requestInit, signal: controller.signal });
+  } catch (fetchErr) {
+    clearTimeout(timeout);
+    // Retry once for GET requests on network errors (they're idempotent)
+    if (init.method === "GET" || !init.method) {
+      await new Promise((r) => setTimeout(r, 500));
+      const retryController = new AbortController();
+      const retryTimeout = setTimeout(() => retryController.abort(), timeoutMs);
+      try {
+        res = await fetch(`${BASE_URL}${path}`, { ...requestInit, signal: retryController.signal });
+      } catch {
+        throw fetchErr; // throw original error
+      } finally {
+        clearTimeout(retryTimeout);
+      }
+    } else {
+      throw fetchErr;
+    }
+  } finally {
+    clearTimeout(timeout);
+  }
   if (res.status === 204) return undefined as unknown as T;
   const text = await res.text();
   let body: unknown;

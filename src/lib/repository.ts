@@ -191,7 +191,6 @@ export async function getProduct(slugOrId: string): Promise<Product | undefined>
   const local = seedProducts.find((p) => p.slug === slugOrId || p.id === slugOrId);
   if (local) return local;
   try {
-    if (!BACKEND_ENABLED) return undefined;
     const p = await api.get<BackendProduct>(`/api/v1/products/${encodeURIComponent(slugOrId)}`);
     return fromBackendProduct(p);
   } catch {

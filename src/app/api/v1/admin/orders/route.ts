@@ -29,7 +29,7 @@ export const GET = withRoute("GET /api/v1/admin/orders", async (request: NextReq
 
   if (error) {
     console.error("[GET /api/v1/admin/orders] orders select failed:", error);
-    return apiError(500, error.message);
+    return apiError(500, "Internal server error");
   }
 
   const ordersList = (orders ?? []) as OrderRow[];

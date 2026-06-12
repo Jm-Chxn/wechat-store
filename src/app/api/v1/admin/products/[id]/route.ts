@@ -26,7 +26,7 @@ export const PATCH = withRoute(
       .single();
     if (lookupError && lookupError.code !== "PGRST116") {
       console.error("[admin/products PATCH] lookup error:", lookupError);
-      return apiError(500, lookupError.message);
+      return apiError(500, "Internal server error");
     }
     if (!existing) return apiError(404, "product not found");
 
@@ -59,7 +59,7 @@ export const PATCH = withRoute(
 
     if (error) {
       console.error("[admin/products PATCH] update error:", error);
-      return apiError(500, error.message);
+      return apiError(500, "Internal server error");
     }
     return ok(mapProduct(data as Record<string, unknown>));
   },
@@ -81,14 +81,14 @@ export const DELETE = withRoute(
       .single();
     if (lookupError && lookupError.code !== "PGRST116") {
       console.error("[admin/products DELETE] lookup error:", lookupError);
-      return apiError(500, lookupError.message);
+      return apiError(500, "Internal server error");
     }
     if (!existing) return apiError(404, "product not found");
 
     const { error: deleteError } = await supabase.from("products").delete().eq("id", id);
     if (deleteError) {
       console.error("[admin/products DELETE] delete error:", deleteError);
-      return apiError(500, deleteError.message);
+      return apiError(500, "Internal server error");
     }
     return noContent();
   },

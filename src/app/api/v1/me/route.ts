@@ -25,7 +25,7 @@ export const GET = withRoute("GET /api/v1/me", async (request: NextRequest) => {
 
   if (profileRes.error && profileRes.error.code !== "PGRST116") {
     console.error("[GET /api/v1/me] profile select failed:", profileRes.error);
-    return apiError(500, profileRes.error.message);
+    return apiError(500, "Internal server error");
   }
 
   const profile = profileRes.data;
@@ -80,7 +80,7 @@ export const PATCH = withRoute("PATCH /api/v1/me", async (request: NextRequest) 
     });
     if (error) {
       console.error("[PATCH /api/v1/me] profile upsert failed:", error);
-      return apiError(500, error.message);
+      return apiError(500, "Internal server error");
     }
   }
 

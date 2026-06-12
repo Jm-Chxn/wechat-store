@@ -45,7 +45,7 @@ export const GET = withRoute("GET /api/v1/admin/users", async (request: NextRequ
 
   if (profilesError) {
     console.error("[GET /api/v1/admin/users] profiles failed:", profilesError);
-    return apiError(500, profilesError.message);
+    return apiError(500, "Internal server error");
   }
 
   const [{ data: orderAggs }, { data: activityRows }, authUsers] = await Promise.all([

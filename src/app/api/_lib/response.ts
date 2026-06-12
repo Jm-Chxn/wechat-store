@@ -9,6 +9,16 @@ export function noContent(): Response {
   return new Response(null, { status: 204 });
 }
 
+export function okCached<T>(data: T, maxAge: number, status = 200): Response {
+  return new Response(JSON.stringify(data), {
+    status,
+    headers: {
+      "Content-Type": "application/json",
+      "Cache-Control": `public, s-maxage=${maxAge}, stale-while-revalidate=${maxAge * 2}`,
+    },
+  });
+}
+
 export function apiError(
   status: number,
   message: string,

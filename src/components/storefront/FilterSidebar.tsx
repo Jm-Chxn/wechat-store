@@ -63,6 +63,7 @@ export function FilterSidebar({
             <button
               type="button"
               onClick={() => onChange({ ...filters, categorySlug: "all" })}
+              aria-pressed={filters.categorySlug === "all"}
               className={cn(
                 "w-full rounded-lg px-3 py-2 text-left text-sm",
                 filters.categorySlug === "all"
@@ -77,6 +78,7 @@ export function FilterSidebar({
                 key={c.slug}
                 type="button"
                 onClick={() => onChange({ ...filters, categorySlug: c.slug })}
+                aria-pressed={filters.categorySlug === c.slug}
                 className={cn(
                   "w-full rounded-lg px-3 py-2 text-left text-sm",
                   filters.categorySlug === c.slug
@@ -115,6 +117,7 @@ export function FilterSidebar({
                 key={tag}
                 type="button"
                 onClick={() => toggleTag(tag)}
+                aria-pressed={on}
                 className={cn(
                   "rounded-full border px-3 py-1 text-xs transition-colors",
                   on

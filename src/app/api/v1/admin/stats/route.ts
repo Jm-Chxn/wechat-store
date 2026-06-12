@@ -26,7 +26,7 @@ export const GET = withRoute("GET /api/v1/admin/stats", async (request: NextRequ
     .lte("created_at", todayEnd.toISOString());
   if (todayError) {
     console.error("[GET admin/stats] today orders select failed:", todayError);
-    return apiError(500, todayError.message);
+    return apiError(500, "Internal server error");
   }
 
   const ordersToday = todayOrders?.length ?? 0;
@@ -35,30 +35,33 @@ export const GET = withRoute("GET /api/v1/admin/stats", async (request: NextRequ
     0,
   );
 
+  const sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 6);
+  sevenDaysAgo.setHours(0, 0, 0, 0);
+
+  const { data: weekOrders } = await supabase
+    .from("orders")
+    .select("total_cents, created_at")
+    .gte("created_at", sevenDaysAgo.toISOString());
+
+  // Group in JS
+  const dayMap = new Map<string, { orders: number; revenue: number }>();
+  for (const o of weekOrders ?? []) {
+    const dateStr = new Date(o.created_at).toISOString().slice(0, 10);
+    const existing = dayMap.get(dateStr) ?? { orders: 0, revenue: 0 };
+    existing.orders++;
+    existing.revenue += (o.total_cents ?? 0) / 100;
+    dayMap.set(dateStr, existing);
+  }
+
+  // Build array for all 7 days (including days with 0 orders)
   const ordersLast7d: { date: string; orders: number; revenue: number }[] = [];
   for (let i = 6; i >= 0; i--) {
     const day = new Date();
     day.setDate(day.getDate() - i);
-    day.setHours(0, 0, 0, 0);
-    const dayEnd = new Date(day);
-    dayEnd.setHours(23, 59, 59, 999);
-
-    const { data: dayOrders } = await supabase
-      .from("orders")
-      .select("total_cents")
-      .gte("created_at", day.toISOString())
-      .lte("created_at", dayEnd.toISOString());
-
     const dateStr = day.toISOString().slice(0, 10);
-    const dayRevenueCents = (dayOrders ?? []).reduce(
-      (sum, o) => sum + (o.total_cents ?? 0),
-      0,
-    );
-    ordersLast7d.push({
-      date: dateStr,
-      orders: dayOrders?.length ?? 0,
-      revenue: dayRevenueCents / 100,
-    });
+    const stats = dayMap.get(dateStr) ?? { orders: 0, revenue: 0 };
+    ordersLast7d.push({ date: dateStr, ...stats });
   }
 
   const { data: orderItems } = await supabase

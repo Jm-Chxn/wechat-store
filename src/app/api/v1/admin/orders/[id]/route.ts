@@ -30,7 +30,7 @@ export const PATCH = withRoute(
       .single();
     if (lookupError && lookupError.code !== "PGRST116") {
       console.error("[admin/orders PATCH] lookup error:", lookupError);
-      return apiError(500, lookupError.message);
+      return apiError(500, "Internal server error");
     }
     if (!existing) return apiError(404, "order not found");
 
@@ -43,7 +43,7 @@ export const PATCH = withRoute(
 
     if (error) {
       console.error("[admin/orders PATCH] update error:", error);
-      return apiError(500, error.message);
+      return apiError(500, "Internal server error");
     }
 
     const { data: items, error: itemsError } = await supabase
@@ -75,13 +75,13 @@ export const DELETE = withRoute(
       .eq("order_id", id);
     if (itemsError) {
       console.error("[admin/orders DELETE] items delete error:", itemsError);
-      return apiError(500, itemsError.message);
+      return apiError(500, "Internal server error");
     }
 
     const { error } = await supabase.from("orders").delete().eq("id", id);
     if (error) {
       console.error("[admin/orders DELETE] order delete error:", error);
-      return apiError(500, error.message);
+      return apiError(500, "Internal server error");
     }
 
     return noContent();

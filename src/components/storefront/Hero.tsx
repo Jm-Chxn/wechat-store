@@ -43,6 +43,7 @@ export function Hero() {
               src="https://images.unsplash.com/photo-1567620905732-2d1ec7ab7445?w=900&h=1100&fit=crop&auto=format&q=70"
               alt="Community shared meals"
               fill
+              sizes="100vw"
               className="object-cover img-fallback"
             />
             <div className="absolute inset-x-0 bottom-0 flex items-center gap-3 bg-gradient-to-t from-black/60 to-transparent p-5 text-white">
