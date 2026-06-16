@@ -439,6 +439,224 @@ export const dictionary = {
     en: "© 2026 Good Food Tuangou Co-op.",
     zh: "© 2026 好食材团购合作社。",
   },
+
+  // contact
+  "contact.title": { en: "Contact Us", zh: "联系我们" },
+  "contact.subtitle": {
+    en: "Have a question or want to join a group buy? We'd love to hear from you.",
+    zh: "有任何问题或想参加团购？欢迎随时联系我们。",
+  },
+  "contact.breadcrumb": { en: "Contact", zh: "联系我们" },
+  "contact.nameLabel": { en: "Name", zh: "姓名" },
+  "contact.namePlaceholder": { en: "Jane Doe", zh: "张三" },
+  "contact.emailLabel": { en: "Email", zh: "邮箱" },
+  "contact.emailPlaceholder": { en: "you@example.com", zh: "you@example.com" },
+  "contact.subjectLabel": { en: "Subject", zh: "主题" },
+  "contact.subjectPlaceholder": { en: "How can we help?", zh: "有什么可以帮您？" },
+  "contact.messageLabel": { en: "Message", zh: "留言" },
+  "contact.messagePlaceholder": {
+    en: "Tell us more about your question or feedback...",
+    zh: "请详细描述您的问题或反馈...",
+  },
+  "contact.submit": { en: "Send Message", zh: "发送留言" },
+  "contact.sending": { en: "Sending...", zh: "发送中..." },
+  "contact.successTitle": { en: "Message sent!", zh: "留言已发送！" },
+  "contact.successBody": {
+    en: "We'll get back to you as soon as possible.",
+    zh: "我们会尽快回复您。",
+  },
+  "contact.errorTitle": { en: "Something went wrong", zh: "发送失败" },
+  "contact.errorBody": {
+    en: "Please try again later or reach out via WeChat.",
+    zh: "请稍后再试，或通过微信联系我们。",
+  },
+  "contact.infoTitle": { en: "Get in Touch", zh: "联系方式" },
+  "contact.emailInfo": { en: "hello@goodfoodtuangou.com", zh: "hello@goodfoodtuangou.com" },
+  "contact.phoneInfo": { en: "(416) 555-0188", zh: "(416) 555-0188" },
+  "contact.wechatInfo": { en: "GoodFoodTuangou", zh: "GoodFoodTuangou" },
+  "contact.locationInfo": {
+    en: "Maple Street Community Centre, Toronto",
+    zh: "多伦多枫树街社区中心",
+  },
+  "contact.hoursTitle": { en: "Operating Hours", zh: "运营时间" },
+  "contact.hoursBody": {
+    en: "Mon–Fri 9 AM – 6 PM\nSat 10 AM – 4 PM\nSun Closed",
+    zh: "周一至周五 9:00–18:00\n周六 10:00–16:00\n周日 休息",
+  },
+  "contact.required": { en: "This field is required", zh: "此项为必填" },
+
+  // faq
+  "faq.title": { en: "Frequently Asked Questions", zh: "常见问题" },
+  "faq.subtitle": {
+    en: "Everything you need to know about our community group-buying co-op.",
+    zh: "关于我们社区团购合作社的一切，您想了解的都在这里。",
+  },
+  "faq.breadcrumb": { en: "FAQ", zh: "常见问题" },
+  "faq.sectionOrders": { en: "Orders & Delivery", zh: "订单与配送" },
+  "faq.sectionProducts": { en: "Products & Quality", zh: "商品与品质" },
+  "faq.sectionPayment": { en: "Payment & Pricing", zh: "支付与价格" },
+  "faq.sectionAccount": { en: "Account & WeChat", zh: "账户与微信" },
+  "faq.q1": { en: "How do I place an order?", zh: "如何下单？" },
+  "faq.a1": {
+    en: "Browse our shop, add items to your cart, and proceed to checkout. Orders are grouped into weekly batches so we can negotiate the best prices from suppliers.",
+    zh: "浏览商品页面，将想要的商品加入购物车，然后前往结账。订单会按周汇总，以便我们与供应商谈到最优价格。",
+  },
+  "faq.q2": { en: "What are the pickup times and locations?", zh: "自取时间和地点是什么？" },
+  "faq.a2": {
+    en: "Pickup is available at our community fridge locations (Maple Street, Cedar Lane, and Riverside Court) every Thursday from 4–7 PM. You'll receive a WeChat notification when your order is ready.",
+    zh: "每周四下午4点至7点，可在社区冷柜自取点（枫树街、雪松巷、河滨苑）取货。订单备好后您会收到微信通知。",
+  },
+  "faq.q3": { en: "Can I cancel or modify an order?", zh: "可以取消或修改订单吗？" },
+  "faq.a3": {
+    en: "You can cancel an order before the weekly batch closes (usually Tuesday evening). After that, orders are sent to suppliers and cannot be changed. Check your order page for the cancellation deadline.",
+    zh: "在每周汇单截止前（通常为周二晚）可以取消订单。截止后订单已发送给供应商，无法修改。请在订单页面查看取消截止时间。",
+  },
+  "faq.q4": { en: "Where is the food sourced from?", zh: "食材来自哪里？" },
+  "faq.a4": {
+    en: "We partner with local farms and trusted distributors in the Greater Toronto Area. Each product page lists its origin so you know exactly where your food comes from.",
+    zh: "我们与大多伦多地区的本地农场和可信赖的供应商合作。每个商品页面都标注了产地，让您清楚了解食材来源。",
+  },
+  "faq.q5": { en: "How do you ensure freshness and quality?", zh: "如何保证新鲜和品质？" },
+  "faq.a5": {
+    en: "All perishable items are sourced fresh each morning and stored in temperature-controlled community fridges. We inspect every batch before distribution and offer full refunds for any quality issues.",
+    zh: "所有生鲜商品每日清晨新鲜采购，存放在温控社区冷柜中。我们在分发前逐批检查，如有品质问题全额退款。",
+  },
+  "faq.q6": { en: "What payment methods do you accept?", zh: "支持哪些付款方式？" },
+  "faq.a6": {
+    en: "We accept credit and debit cards through our secure checkout. WeChat Pay support is coming soon. All transactions are encrypted and no card data is stored on our servers.",
+    zh: "我们通过安全结账页面接受信用卡和借记卡支付。微信支付即将上线。所有交易均经过加密，我们不存储任何卡号信息。",
+  },
+  "faq.q7": { en: "How does group pricing work?", zh: "团购价格是怎么运作的？" },
+  "faq.a7": {
+    en: "By pooling orders from the community, we buy in bulk directly from suppliers. This lets us pass on savings of 10–30% compared to retail prices. The more neighbours who join, the better the deals.",
+    zh: "通过汇集社区订单，我们直接从供应商批量采购，为大家节省10-30%的零售价格。参与的邻居越多，优惠越大。",
+  },
+  "faq.q8": { en: "How do I sign in with WeChat?", zh: "如何用微信登录？" },
+  "faq.a8": {
+    en: "Click \"Sign In\" and choose the WeChat option. You'll be prompted to scan a QR code with your WeChat app. Once authorized, your account is created automatically — no separate registration needed.",
+    zh: "点击\u201C登录\u201D并选择微信登录选项，用微信扫描二维码即可。授权后账户会自动创建，无需单独注册。",
+  },
+  "faq.q9": { en: "How do I update my profile information?", zh: "如何更新个人信息？" },
+  "faq.a9": {
+    en: "Visit your Account page after signing in. You can update your name, phone number, and WeChat ID. Your delivery preferences are saved automatically from your most recent order.",
+    zh: "登录后进入\u201C我的账户\u201D页面，可以更新姓名、手机号和微信号。配送偏好会根据您最近的订单自动保存。",
+  },
+  "faq.q10": { en: "Can I request a refund or return?", zh: "可以申请退款或退货吗？" },
+  "faq.a10": {
+    en: "If you receive a damaged or incorrect item, contact us within 24 hours through our contact page or WeChat group. We'll arrange a replacement or full refund — no questions asked.",
+    zh: "如果收到损坏或错误的商品，请在24小时内通过联系页面或微信群联系我们。我们会安排换货或全额退款，无需多问。",
+  },
+  "faq.stillHaveQuestions": { en: "Still have questions?", zh: "还有其他问题？" },
+  "faq.contactUs": { en: "Contact Us", zh: "联系我们" },
+
+  // privacy
+  "privacy.title": { en: "Privacy Policy", zh: "隐私政策" },
+  "privacy.breadcrumb": { en: "Privacy Policy", zh: "隐私政策" },
+  "privacy.lastUpdated": { en: "Last updated: June 2026", zh: "最后更新：2026 年 6 月" },
+  "privacy.introTitle": { en: "Introduction", zh: "引言" },
+  "privacy.introBody": {
+    en: "Good Food Tuangou Co-op (\"we\", \"us\", or \"our\") operates a community group-buying grocery service. This Privacy Policy explains how we collect, use, and protect your personal information when you use our website and services. We are a neighbour-run co-op and we treat your data with the same care we put into sourcing good food.",
+    zh: "好食材团购合作社（以下简称\u201C我们\u201D）运营一项社区团购生鲜服务。本隐私政策说明我们在您使用网站和服务时如何收集、使用及保护您的个人信息。我们是由邻里共同运营的合作社，对待您的数据就像对待我们精心挑选的食材一样认真。",
+  },
+  "privacy.collectTitle": { en: "Information We Collect", zh: "我们收集的信息" },
+  "privacy.collectBody": {
+    en: "When you create an account or place an order, we may collect: your name, email address, phone number, WeChat ID, delivery address, and order history. We only collect information that is necessary to process your orders and provide our group-buying service.",
+    zh: "当您注册账户或下单时，我们可能会收集以下信息：姓名、邮箱地址、手机号码、微信号、收货地址及订单记录。我们仅收集处理订单和提供团购服务所必需的信息。",
+  },
+  "privacy.useTitle": { en: "How We Use Your Information", zh: "信息使用方式" },
+  "privacy.useBody": {
+    en: "We use your information to: process and fulfill your orders, communicate about pickup times and locations, send order confirmations and updates via WeChat or email, improve our product selection and service quality, and respond to your questions or requests.",
+    zh: "我们使用您的信息来：处理和完成您的订单、通知自取时间和地点、通过微信或邮件发送订单确认和更新、改进商品选品和服务质量，以及回复您的咨询或请求。",
+  },
+  "privacy.sharingTitle": { en: "Information Sharing", zh: "信息共享" },
+  "privacy.sharingBody": {
+    en: "We do not sell, rent, or trade your personal information to third parties. We may share limited information (such as your name and delivery address) with our delivery partners solely for the purpose of completing your order. All partners are required to protect your information in accordance with this policy.",
+    zh: "我们不会出售、出租或向第三方交易您的个人信息。我们可能仅为完成配送而与配送合作方共享有限的信息（如姓名和收货地址）。所有合作方均须按照本政策的要求保护您的信息。",
+  },
+  "privacy.securityTitle": { en: "Data Security", zh: "数据安全" },
+  "privacy.securityBody": {
+    en: "We use industry-standard security measures to protect your personal information. Your data is stored securely on Supabase with encryption at rest and in transit. While no method of electronic storage is 100% secure, we strive to use commercially acceptable means to protect your data.",
+    zh: "我们采用行业标准的安全措施来保护您的个人信息。您的数据安全存储在 Supabase 上，传输和存储过程均经过加密。虽然没有任何电子存储方式能保证百分之百安全，但我们会尽力采用合理的技术手段保护您的数据。",
+  },
+  "privacy.rightsTitle": { en: "Your Rights", zh: "您的权利" },
+  "privacy.rightsBody": {
+    en: "You have the right to access, correct, or delete your personal information at any time. To exercise these rights, simply contact us through our contact page or send us an email. We will respond to your request within a reasonable timeframe.",
+    zh: "您有权随时查阅、更正或删除您的个人信息。如需行使这些权利，请通过联系页面或发送邮件与我们联系，我们会在合理的时间内回复您的请求。",
+  },
+  "privacy.cookiesTitle": { en: "Cookies & Analytics", zh: "Cookie 与分析" },
+  "privacy.cookiesBody": {
+    en: "We use minimal cookies solely for session management and keeping you signed in. We do not use third-party tracking cookies or advertising trackers. Your browsing experience stays between you and us.",
+    zh: "我们仅使用必要的 Cookie 来维持登录会话，不使用任何第三方跟踪 Cookie 或广告追踪器。您的浏览体验仅限于您与我们之间。",
+  },
+  "privacy.changesTitle": { en: "Changes to This Policy", zh: "政策变更" },
+  "privacy.changesBody": {
+    en: "We may update this Privacy Policy from time to time to reflect changes in our practices or for legal reasons. When we make significant changes, we will notify you via WeChat message or email. We encourage you to review this page periodically.",
+    zh: "我们可能会不定期更新本隐私政策，以反映业务变化或法律要求。当发生重大变更时，我们会通过微信消息或邮件通知您。建议您定期查看本页面。",
+  },
+  "privacy.contactTitle": { en: "Contact Us", zh: "联系我们" },
+  "privacy.contactBody": {
+    en: "If you have any questions about this Privacy Policy or how we handle your data, please visit our contact page or email us at hello@goodfoodtuangou.com. We're a small community team and we're happy to help.",
+    zh: "如果您对本隐私政策或我们处理数据的方式有任何疑问，请访问联系页面或发送邮件至 hello@goodfoodtuangou.com。我们是一支小小的社区团队，随时乐意为您解答。",
+  },
+
+  // terms
+  "terms.title": { en: "Terms of Service", zh: "服务条款" },
+  "terms.subtitle": {
+    en: "Please read these terms carefully before using our platform.",
+    zh: "使用我们的平台前，请仔细阅读以下条款。",
+  },
+  "terms.breadcrumb": { en: "Terms of Service", zh: "服务条款" },
+  "terms.lastUpdated": { en: "Last updated: June 2026", zh: "最后更新：2026年6月" },
+  "terms.acceptanceTitle": { en: "1. Acceptance of Terms", zh: "1. 接受条款" },
+  "terms.acceptanceBody": {
+    en: "By accessing or using the Good Food Tuangou platform — including our website, ordering system, and community pickup services — you agree to be bound by these Terms of Service. If you do not agree to these terms, please do not use our services. We're a community co-op, so these terms are designed to keep things fair and friendly for everyone.",
+    zh: "访问或使用好食材团购平台（包括我们的网站、下单系统和社区自取服务）即表示您同意遵守本服务条款。如果您不同意这些条款，请勿使用我们的服务。我们是一个社区合作社，这些条款旨在确保每位成员都能公平、友好地参与。",
+  },
+  "terms.serviceTitle": { en: "2. About Our Service", zh: "2. 关于我们的服务" },
+  "terms.serviceBody": {
+    en: "Good Food Tuangou is a community group-buying co-op. Here's how it works: neighbours pool their grocery orders together so everyone gets better prices. We source quality produce, pantry staples, and specialty items — then distribute them through community fridge pickup points in your neighbourhood. By buying together, we cut out the middleman and pass the savings on to you.",
+    zh: "好食材团购是一个社区团购合作社。我们的运作方式是：邻里汇集各自的食品订单，这样每个人都能享受更优惠的价格。我们精选优质生鲜、日常食材和特色商品，然后通过您所在社区的社区冷柜自取点进行分发。大家一起买，省去中间环节，实惠直接到手。",
+  },
+  "terms.accountTitle": { en: "3. Account Registration", zh: "3. 账号注册" },
+  "terms.accountBody": {
+    en: "To place orders, you'll need to create an account using your email or WeChat. Please provide accurate, up-to-date information when signing up. You are responsible for keeping your login credentials secure and for all activity that occurs under your account. If you suspect unauthorized access, please contact us right away.",
+    zh: "下单前，您需要使用邮箱或微信创建账号。注册时请提供准确且最新的信息。您有责任保管好登录凭据，并对账号下的所有活动负责。如果您怀疑账号被盗用，请立即联系我们。",
+  },
+  "terms.ordersTitle": { en: "4. Orders & Payments", zh: "4. 订单与支付" },
+  "terms.ordersBody": {
+    en: "When you place an order, you're committing to purchase those items at the listed price. Prices may change between group-buy cycles as supplier costs fluctuate — we always aim for the best deal. Some items may require a minimum group-buy quantity before the order is confirmed. Payment is collected at checkout. If a group-buy minimum isn't met, we'll notify you and issue a full refund.",
+    zh: "下单即表示您同意以标示价格购买相应商品。由于供应商成本波动，价格可能在不同团购周期之间有所变化——我们始终致力于为大家争取最优惠的价格。部分商品可能需要达到最低团购数量后订单才会确认。付款在结账时完成。如果未达到最低团购量，我们会通知您并全额退款。",
+  },
+  "terms.pickupTitle": { en: "5. Pickup & Delivery", zh: "5. 自取与配送" },
+  "terms.pickupBody": {
+    en: "Most orders are picked up at designated community fridge locations during scheduled pickup windows. We'll notify you when your order is ready and where to collect it. Orders totalling $150 or more qualify for free home delivery within our service area. Please pick up perishable items on time — we can't guarantee freshness for items left past the pickup window, and uncollected perishable orders may be donated to reduce food waste.",
+    zh: "大部分订单在指定的社区冷柜自取点，于预约的自取时段内提取。订单备好后我们会通知您取货时间和地点。订单金额满150美元可享受服务范围内的免费送货上门。请按时提取生鲜商品——超过自取时段的商品我们无法保证新鲜度，未及时领取的生鲜订单可能会被捐赠以减少食物浪费。",
+  },
+  "terms.returnsTitle": { en: "6. Returns & Refunds", zh: "6. 退换与退款" },
+  "terms.returnsBody": {
+    en: "We stand behind the quality of our products. If you receive items with quality issues (damaged, spoiled, or incorrect), please report it within 24 hours of pickup with a photo, and we'll make it right. Refunds or credits are issued at the co-op's discretion. Due to the nature of fresh food, we cannot accept returns on perishable items once they've been picked up — so please inspect your order at the pickup point.",
+    zh: "我们对商品品质充满信心。如果您收到的商品存在质量问题（损坏、变质或发错货），请在取货后24小时内附照片向我们反馈，我们会妥善处理。退款或积分补偿由合作社酌情决定。由于生鲜食品的特殊性，取货后的生鲜商品恕不接受退货——请您在取货点当场检查订单。",
+  },
+  "terms.conductTitle": { en: "7. User Conduct", zh: "7. 用户行为规范" },
+  "terms.conductBody": {
+    en: "As a community co-op, we rely on mutual trust and respect. Please don't misuse the platform — this includes placing fraudulent orders, creating multiple accounts to exploit promotions, harassing other members or staff, or any activity that undermines our community. We reserve the right to suspend or terminate accounts that violate these guidelines.",
+    zh: "作为社区合作社，我们依靠彼此的信任和尊重。请勿滥用平台——包括下虚假订单、创建多个账号薅羊毛、骚扰其他成员或工作人员，以及任何损害社区的行为。我们有权暂停或终止违反这些规范的账号。",
+  },
+  "terms.liabilityTitle": { en: "8. Limitation of Liability", zh: "8. 责任限制" },
+  "terms.liabilityBody": {
+    en: "We do our best to keep everything running smoothly, but we're a volunteer-driven community co-op — not a big corporation. Our platform and services are provided \"as is.\" To the fullest extent permitted by law, Good Food Tuangou shall not be liable for any indirect, incidental, or consequential damages arising from your use of our services. Our total liability for any claim shall not exceed the amount you paid for the relevant order.",
+    zh: "我们尽全力保障一切顺利运营，但我们是由志愿者驱动的社区合作社——不是大企业。我们的平台和服务按「现状」提供。在法律允许的最大范围内，好食材团购不对因使用我们服务而产生的任何间接、附带或后果性损失承担责任。我们对任何索赔的总责任不超过您为相关订单支付的金额。",
+  },
+  "terms.changesTitle": { en: "9. Changes to Terms", zh: "9. 条款变更" },
+  "terms.changesBody": {
+    en: "We may update these Terms of Service from time to time to reflect changes in our operations or legal requirements. When we do, we'll update the \"Last updated\" date at the top of this page. Your continued use of the platform after changes are posted constitutes your acceptance of the revised terms. We encourage you to review this page periodically.",
+    zh: "我们可能会不时更新本服务条款，以反映运营变化或法律要求。届时我们会更新页面顶部的「最后更新」日期。条款变更发布后您继续使用平台，即表示接受修改后的条款。建议您定期查看本页面。",
+  },
+  "terms.contactTitle": { en: "10. Contact", zh: "10. 联系我们" },
+  "terms.contactBody": {
+    en: "Questions about these terms? We're happy to help. Reach out to us at hello@goodfoodtuangou.com or visit our contact page.",
+    zh: "对这些条款有疑问？我们很乐意为您解答。请发送邮件至 hello@goodfoodtuangou.com 或访问我们的联系页面。",
+  },
 } as const;
 
 export type DictionaryKey = keyof typeof dictionary;

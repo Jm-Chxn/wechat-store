@@ -28,10 +28,10 @@ export function Footer() {
           <h4 className="text-sm font-semibold">{t("footer.help")}</h4>
           <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
             <li>
-              <Link href="#" className="hover:text-ink">{t("footer.contact")}</Link>
+              <Link href="/contact" className="hover:text-ink">{t("footer.contact")}</Link>
             </li>
             <li>
-              <Link href="#" className="hover:text-ink">{t("footer.faq")}</Link>
+              <Link href="/faq" className="hover:text-ink">{t("footer.faq")}</Link>
             </li>
           </ul>
         </div>
@@ -39,16 +39,14 @@ export function Footer() {
           <h4 className="text-sm font-semibold">{t("footer.terms")}</h4>
           <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
             <li>
-              <Link href="#" className="hover:text-ink">{t("footer.privacy")}</Link>
+              <Link href="/privacy" className="hover:text-ink">{t("footer.privacy")}</Link>
             </li>
             <li>
-              <Link href="#" className="hover:text-ink">{t("footer.terms")}</Link>
+              <Link href="/terms" className="hover:text-ink">{t("footer.terms")}</Link>
             </li>
           </ul>
         </div>
-      </div>
-      <div className="border-t border-border bg-bg/60 py-4">
-        <div className="container text-center text-xs text-muted-foreground">
+        <div className="sm:col-span-2 md:col-span-4 border-t border-border pt-6 text-center text-xs text-muted-foreground">
           {t("footer.copyright")}
         </div>
       </div>

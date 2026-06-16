@@ -20,10 +20,11 @@ import { useAuth } from "@/providers/AuthProvider";
 import { useCart } from "@/providers/CartProvider";
 import { cn, getDisplayName } from "@/lib/utils";
 
-const navItems: { href: string; key: "nav.home" | "nav.shop" | "nav.categories" | "nav.account" }[] = [
+const navItems: { href: string; key: "nav.home" | "nav.shop" | "nav.categories" | "nav.account" | "footer.contact" }[] = [
   { href: "/", key: "nav.home" },
   { href: "/shop", key: "nav.shop" },
   { href: "/account/orders", key: "nav.account" },
+  { href: "/contact", key: "footer.contact" },
 ];
 
 export function Navbar() {
